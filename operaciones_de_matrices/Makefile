@@ -8,11 +8,12 @@ LDFLAGS = -lm
 MAINS = $(shell find -type f -name "main*.c")
 SRCS = $(shell find -type f -name "*.c")
 objects = $(patsubst ./%.c, obj/%.o, $(SRCS))
-OBJS = $(filter-out $(MAINS),$(objects))
+mainobjects = $(patsubst ./%.c, obj/%.o, $(MAINS))
+OBJS = $(filter-out $(mainobjects),$(objects))
 
 TARGET = main
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(mainobjects)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 obj/%.o: %.c
 	@mkdir -p $(@D)
