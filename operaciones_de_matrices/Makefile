@@ -5,10 +5,13 @@ ifeq ($(DEBUG),1)
 endif
 LDFLAGS = -lm
 
+MAINS = $(shell find -type f -name "main*.c")
 SRCS = $(shell find -type f -name "*.c")
-OBJS = $(patsubst ./%.c, obj/%.o, $(SRCS))
+objects = $(patsubst ./%.c, obj/%.o, $(SRCS))
+OBJS = $(filter-out $(MAINS),$(objects))
 
-TARGET = Test
+TARGET = main
+
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 obj/%.o: %.c
@@ -17,8 +20,10 @@ obj/%.o: %.c
 
 .PHONY: test clean
 
-test: Test
+test: $(TARGET)
 	./Test
+
+main1: TARGET = main1, $(TARGET)
 
 clean:
 	rm -f Test

@@ -1,5 +1,9 @@
 #include "operaciones.h"
-#include "stdio.h"
+#include <stdio.h>
+#include <math.h>
+
+void show(int mat[DIM][DIM]);
+void fill(int mat[DIM][DIM]);
 
 int main(void) {
 
@@ -34,3 +38,16 @@ int main(void) {
 
 	return 0;
 }
+
+void fill(int mat[DIM][DIM]){
+	for(int i=0;i<DIM;i++){
+		for(int j=0;j<DIM;j++){
+			mat[i][j] = pow(i,j);
+		}
+	}
+}
+
+void show(int mat[DIM][DIM]){
+	matrix_save(stdout, mat);
+}
+
