@@ -29,35 +29,35 @@ int main(int argc, char *argv[], char *envp[]) {
 		}
 	}
 
-	int mat1[ROWS][COLS];
-	int mat2[ROWS][COLS];
+	matrix mat1;
+	matrix mat2;
 
 	if (fi==stdin) printf("Ingrese valores de la matriz 1\n"); 
-	matrix_get(fi, mat1);
+	matrix_get(fi, &mat1);
 	if (fi==stdin) printf("Ingrese valores de la matriz 2\n"); 
-	matrix_get(fi, mat2);
+	matrix_get(fi, &mat2);
 
-	if (fi==stdin) printf("Mat1:\n");
+	if (fo==stdout) printf("Mat1:\n");
 	matrix_save(fo, mat1);
-	if (fi==stdin) printf("Mat2:\n");
+	if (fo==stdout) printf("Mat2:\n");
 	matrix_save(fo, mat2);
 
-	int ret[ROWS][COLS];
+	matrix ret;
 
-	if (fi==stdin) printf("Mat1 + Mat2:\n");
-	add(mat1, mat2, ret);
+	if (fo==stdout) printf("Mat1 + Mat2:\n");
+	add(mat1, mat2, &ret);
 	matrix_save(fo, ret);
 
-	if (fi==stdin) printf("[Mat1]^T:\n");
-	transpose(mat1, ret);
+	if (fo==stdout) printf("[Mat1]^T:\n");
+	transpose(mat1, &ret);
 	matrix_save(fo, ret);
 
-	if (fi==stdin) printf("Mat1 * 5:\n");
-	scalar_mult(mat1, 5, ret);
+	if (fo==stdout) printf("Mat1 * 5:\n");
+	scalar_mult(mat1, 5, &ret);
 	matrix_save(fo, ret);
 
-	if (fi==stdin) printf("Mat1 * Mat2:\n");
-	matrix_mult(mat1, mat2, ret);
+	if (fo==stdout) printf("Mat1 * Mat2:\n");
+	matrix_mult(mat1, mat2, &ret);
 	matrix_save(fo, ret);
 
 	return 0;
