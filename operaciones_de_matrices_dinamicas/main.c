@@ -15,6 +15,9 @@ int main(int argc, char *argv[], char *envp[]) {
 				exit(-1);
 			}
 			fi = fopen(argv[i], "r");
+			if (!fi) {
+				fprintf(stderr, "fi: file failed to open");
+			}
 		}
 		if(!strcmp(argv[i],"-o")){
 			i++;
@@ -23,6 +26,9 @@ int main(int argc, char *argv[], char *envp[]) {
 				exit(-1);
 			}
 			fo = fopen(argv[i], "w+");
+			if (!fo) {
+				fprintf(stderr, "fo: file failed to open");
+			}
 		}
 		if(!strcmp(argv[i],"-p")){
 			matrix_save_setpretty();
@@ -43,6 +49,9 @@ int main(int argc, char *argv[], char *envp[]) {
 	matrix_save(fo, mat2);
 
 	matrix ret;
+	ret.rows = mat1.rows;
+	ret.cols = mat1.cols;
+	matrix_alloc(&ret);
 
 	if (fo==stdout) printf("Mat1 + Mat2:\n");
 	add(mat1, mat2, &ret);

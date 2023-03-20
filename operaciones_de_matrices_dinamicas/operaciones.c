@@ -7,9 +7,8 @@ char prety = 0;
 int add(matrix mat1, matrix mat2, matrix *res) {
 	int ROWS = mat1.rows;
 	int COLS = mat1.cols;
-	if (ROWS != mat2.rows || COLS != mat2.rows){
-		return -1;
-	}
+	if (ROWS != mat2.rows || COLS != mat2.rows){ return -1; }
+	if (ROWS != res->rows || COLS != res->rows){ return -1; }
 	for (int i = 0; i < ROWS; i++) {
 		for (int j = 0; j < COLS; j++) {
 			res->data[i][j] = mat1.data[i][j] + mat2.data[i][j];
@@ -50,6 +49,9 @@ void matrix_mult(matrix mat1, matrix mat2, matrix *res) {
 	int ROWS = mat1.rows;
 	int COLS = mat1.cols;
 	matrix aux;
+	aux.rows = ROWS;
+	aux.cols = COLS;
+	matrix_alloc(&aux);
 	transpose(mat2, &aux);
 	for (int i = 0; i < ROWS; i++) {
 		for (int j = 0; j < COLS; j++) {
@@ -93,6 +95,27 @@ void matrix_save(FILE *stream, matrix mat) {
 }
 
 /*
+ * Allocates memotry a given matrix
+ * Expects rows and colums to be set previously
+ *
+ * will return -1 on allocation fail*/
+int matrix_alloc(matrix *mat){
+	mat->data = (int **)calloc(mat->rows, sizeof(int *));
+	if (!mat->data) {
+		fprintf(stderr, "matrix_get: Failed to allocate matrix");
+		return -1;
+	}
+	for (int i = 0; i < mat->rows; i++) {
+		mat->data[i] = (int *)calloc(mat->cols, sizeof(int));
+		if (!mat->data[i]) {
+			fprintf(stderr, "matrix_get: Failed to allocate matrix");
+			return -1;
+		}
+	}
+	return 0;
+}
+
+/*
  * Expects a rows number, a columns number
  * and a set of rows*columns numbers to 
  * populate the matrix with
@@ -105,39 +128,26 @@ int matrix_get(FILE *stream, matrix *mat) {
 	if (stream!=stdin) { rewind(stream); }
 	//Get matrix size
 	if (!stream) { 
-		fscanf(stream, "%d", &mat->rows);
 		fprintf(stderr, "matrix_get: EOF reached");
 		return -1;
 	}
+	fscanf(stream, "%d", &mat->rows);
 	if (!stream) {
-		fscanf(stream, "%d", &mat->cols);
 		fprintf(stderr, "matrix_get: EOF reached");
 		return -1;
 	}
-	fprintf(stderr, "matrix_get: rows: %d, cols: %d", mat->rows, mat->cols);
+	fscanf(stream, "%d", &mat->cols);
 
-	//Allocate memory for specified matrix
-	mat->data = (int **)calloc(mat->rows, sizeof(int *));
-	if (!mat->data) {
-		fprintf(stderr, "matrix_get: Failed to allocate matrix");
-		return 1;
-	}
-	for (int i = 0; i < mat->rows; i++) {
-		mat->data[i] = (int *)calloc(mat->cols, sizeof(int));
-		if (!mat->data[i]) {
-			fprintf(stderr, "matrix_get: Failed to allocate matrix");
-			return 1;
-		}
-	}
+	if (matrix_alloc(mat)<0) { return 1; }
 
 	//Populate matrix
 	for (int i = 0; i < mat->rows; i++) {
 		for (int j = 0; j < mat->cols; j++) {
 			if (!stream) {
-				fscanf(stream, "%d", &mat->data[i][j]);
 				fprintf(stderr, "matrix_get: EOF reached");
 				return -1;
 			}
+			fscanf(stream, "%d", &mat->data[i][j]);
 		}
 	}
 
