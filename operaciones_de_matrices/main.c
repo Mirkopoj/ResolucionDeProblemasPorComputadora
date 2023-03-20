@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <math.h>
 
-void show(int mat[DIM][DIM]);
-void fill(int mat[DIM][DIM]);
+void show(int mat[ROWS][COLS]);
+void fill(int mat[ROWS][COLS]);
 
 int main(void) {
 
-	int mat1[DIM][DIM];
-	int mat2[DIM][DIM];
+	int mat1[ROWS][COLS];
+	int mat2[ROWS][COLS];
 
 	fill(mat1);
 	fill(mat2);
@@ -18,7 +18,7 @@ int main(void) {
 	printf("Mat2:\n");
 	show(mat2);
 
-	int ret[DIM][DIM];
+	int ret[ROWS][COLS];
 
 	printf("Mat1 + Mat2:\n");
 	add(mat1, mat2, ret);
@@ -39,15 +39,15 @@ int main(void) {
 	return 0;
 }
 
-void fill(int mat[DIM][DIM]){
-	for(int i=0;i<DIM;i++){
-		for(int j=0;j<DIM;j++){
+void fill(int mat[ROWS][COLS]){
+	for(int i=0;i<ROWS;i++){
+		for(int j=0;j<COLS;j++){
 			mat[i][j] = pow(i,j);
 		}
 	}
 }
 
-void show(int mat[DIM][DIM]){
+void show(int mat[ROWS][COLS]){
 	matrix_save(stdout, mat);
 }
 

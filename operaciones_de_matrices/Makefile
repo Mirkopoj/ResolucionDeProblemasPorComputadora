@@ -1,31 +1,26 @@
 CC = gcc
-CFLAGS = 
+LDFLAGS = -lm
+CFLAGS = -O
 ifeq ($(DEBUG),1)
 	CFLAGS := -g3 $(CFLAGS)
 endif
-LDFLAGS = -lm
 
 MAINS = $(shell find -type f -name "main*.c")
-SRCS = $(shell find -type f -name "*.c")
-objects = $(patsubst ./%.c, obj/%.o, $(SRCS))
-mainobjects = $(patsubst ./%.c, obj/%.o, $(MAINS))
-OBJS = $(filter-out $(mainobjects),$(objects))
+SRCS = $(shell find -type f -name "[!main]*.c")
+MAINOBJS = $(patsubst ./%.c, obj/%.o, $(MAINS))
+OBJS = $(patsubst ./%.c, obj/%.o, $(SRCS))
 
-TARGET = main
+all: $(MAINS:.c=)
 
-$(TARGET): $(OBJS) $(mainobjects)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+$(MAINS:.c=): $(OBJS) $(MAINOBJS)
+	$(CC) $(CFLAGS) -o $@ obj/$@.o $(OBJS) $(LDFLAGS)
+
 obj/%.o: %.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY: test clean
-
-test: $(TARGET)
-	./Test
-
-main1: TARGET = main1, $(TARGET)
+.PHONY: clean
 
 clean:
-	rm -f Test
+	rm -f $(MAINS:.c=)
 	rm -rf obj/
