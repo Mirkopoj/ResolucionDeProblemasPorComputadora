@@ -110,6 +110,7 @@ int matrix_alloc(matrix *mat){
 		mat->data[i] = (int *)calloc(mat->cols, sizeof(int));
 		if (!mat->data[i]) {
 			fprintf(stderr, "matrix_get: Failed to allocate matrix");
+			matrix_free(mat);
 			return -1;
 		}
 	}
