@@ -1,1 +1,7 @@
 C1c-proyectos/
+*
+*.*
+!*.c 
+!*.h
+!Makefile
+!*.txt
