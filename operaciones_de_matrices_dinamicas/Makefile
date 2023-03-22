@@ -5,22 +5,28 @@ ifeq ($(DEBUG),1)
 	CFLAGS := -g3 $(CFLAGS)
 endif
 
-MAINS = $(shell find -type f -name "main*.c")
-SRCS = $(shell find -type f -name "[!main]*.c")
-MAINOBJS = $(patsubst ./%.c, obj/%.o, $(MAINS))
-OBJS = $(patsubst ./%.c, obj/%.o, $(SRCS))
+MAINS = $(shell find src/mains/ -maxdepth 1 -type f -name "*.c")
+SRCS = $(shell find src/ -maxdepth 1 -type f -name "*.c")
+MAINOBJS = $(patsubst src/mains/%.c, obj/mains/%.o, $(MAINS))
+MAINOUTS = $(patsubst src/mains/%.c, %, $(MAINS))
+OBJS = $(patsubst src/%.c, obj/%.o, $(SRCS))
 
-all: $(MAINS:.c=)
+all: $(MAINOUTS)
 
-$(MAINS:.c=): $(OBJS) $(MAINOBJS)
-	$(CC) $(CFLAGS) -o $@ obj/$@.o $(OBJS) $(LDFLAGS)
+$(MAINOUTS): $(OBJS) $(MAINOBJS)
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -o bin/$@ obj/mains/$@.o $(OBJS) $(LDFLAGS)
 
-obj/%.o: %.c
+obj/%.o: src/%.c 
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+obj/mains/%.o: src/mains/%.c 
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean
 
 clean:
-	rm -f $(MAINS:.c=)
+	rm -rf bin/ 
 	rm -rf obj/
