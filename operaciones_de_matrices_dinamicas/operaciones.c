@@ -58,6 +58,7 @@ void matrix_mult(matrix mat1, matrix mat2, matrix *res) {
 			res->data[i][j] = dot(mat1.data[i], aux.data[j], mat1.rows);
 		}
 	}
+	matrix_free(&aux);
 }
 
 void pretty_print(FILE *stream, const char *str) {
@@ -113,6 +114,19 @@ int matrix_alloc(matrix *mat){
 		}
 	}
 	return 0;
+}
+
+void matrix_free(matrix *mat){
+	if (!mat->data) { return; }
+	for (int i=0; i<mat->rows; i++) {
+		if (!mat->data[i]) { break; }
+		free(mat->data[i]);
+		mat->data[i] = NULL;
+	}
+	free(mat->data);
+	mat->data = NULL;
+	mat->rows=0;
+	mat->cols=0;
 }
 
 /*

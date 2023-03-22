@@ -42,6 +42,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	matrix_get(fi, &mat1);
 	if (fi==stdin) printf("Ingrese valores de la matriz 2\n"); 
 	matrix_get(fi, &mat2);
+	if (fi!=stdin) fclose(fi);
 
 	if (fo==stdout) printf("Mat1:\n");
 	matrix_save(fo, mat1);
@@ -69,5 +70,9 @@ int main(int argc, char *argv[], char *envp[]) {
 	matrix_mult(mat1, mat2, &ret);
 	matrix_save(fo, ret);
 
+	matrix_free(&mat1);
+	matrix_free(&mat2);
+	matrix_free(&ret);
+	if (fo!=stdout) fclose(fo);
 	return 0;
 }

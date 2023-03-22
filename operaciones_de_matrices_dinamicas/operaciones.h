@@ -16,5 +16,6 @@ void scalar_mult(matrix mat, int scalar, matrix *res);
 void matrix_mult(matrix mat1, matrix mat2, matrix *res);
 void matrix_save_setpretty(void);
 int matrix_alloc(matrix *mat);
+void matrix_free(matrix *mat);
 
 #endif // !DEBUG
