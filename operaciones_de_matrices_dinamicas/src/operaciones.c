@@ -31,7 +31,7 @@ int transpose(matrix mat, matrix *res) {
 	}
 	for (int i = 0; i < mat.rows; i++) {
 		for (int j = 0; j < mat.cols; j++) {
-			res->data[i][j] = mat.data[j][i];
+			res->data[j][i] = mat.data[i][j];
 		}
 	}
 	return 0;
@@ -66,7 +66,7 @@ int matrix_mult(matrix mat1, matrix mat2, matrix *res) {
 		return -1;
 	}
 	if (mat1.rows != res->rows || mat2.cols != res->cols){
-		fprintf(stderr, "Matrix saclar multiply: Result matrix of invalid size, reallocating\n");
+		fprintf(stderr, "Matrix multiply: Result matrix of invalid size, reallocating\n");
 		matrix_free(res);
 		res->rows=mat1.rows;
 		res->cols=mat2.cols;
@@ -77,8 +77,8 @@ int matrix_mult(matrix mat1, matrix mat2, matrix *res) {
 	aux.cols = mat2.rows;
 	if (matrix_alloc(&aux)<0) { return -1; }
 	transpose(mat2, &aux);
-	for (int i = 0; i < mat1.rows; i++) {
-		for (int j = 0; j < mat1.cols; j++) {
+	for (int i = 0; i < res->rows; i++) {
+		for (int j = 0; j < res->cols; j++) {
 			res->data[i][j] = dot(mat1.data[i], aux.data[j], mat1.rows);
 		}
 	}
@@ -95,7 +95,7 @@ void pretty_print(FILE *stream, const char *str) {
 void matrix_save(FILE *stream, matrix mat) {
 	const int num_size = 7;
 	pretty_print(stream, "┌");
-	for (int i = 0; i < mat.rows * num_size; i++) {
+	for (int i = 0; i < mat.cols * num_size; i++) {
 		pretty_print(stream, " ");
 	}
 	pretty_print(stream, "┐");
@@ -111,7 +111,7 @@ void matrix_save(FILE *stream, matrix mat) {
 	}
 
 	pretty_print(stream, "└");
-	for (int i = 0; i < mat.rows * num_size; i++) {
+	for (int i = 0; i < mat.cols * num_size; i++) {
 		pretty_print(stream, " ");
 	}
 	pretty_print(stream, "┘");
@@ -126,13 +126,13 @@ void matrix_save(FILE *stream, matrix mat) {
 int matrix_alloc(matrix *mat){
 	mat->data = (int **)calloc(mat->rows, sizeof(int *));
 	if (!mat->data) {
-		fprintf(stderr, "matrix_get: Failed to allocate matrix");
+		fprintf(stderr, "matrix_alloc: Failed to allocate matrix");
 		return -1;
 	}
 	for (int i = 0; i < mat->rows; i++) {
 		mat->data[i] = (int *)calloc(mat->cols, sizeof(int));
 		if (!mat->data[i]) {
-			fprintf(stderr, "matrix_get: Failed to allocate matrix");
+			fprintf(stderr, "matrix_alloc: Failed to allocate matrix");
 			matrix_free(mat);
 			return -1;
 		}
@@ -193,3 +193,16 @@ int matrix_get(FILE *stream, matrix *mat) {
 }
 
 void matrix_save_setpretty() { prety = 1; }
+
+void matrix_swap(matrix *mat1, matrix *mat2){
+	matrix aux;
+	aux.cols = mat1->cols;
+	aux.rows = mat1->rows;
+	aux.data = mat1->data;
+	mat1->cols = mat2->cols;
+	mat1->rows = mat2->rows;
+	mat1->data = mat2->data;
+	mat2->cols = aux.cols;
+	mat2->rows = aux.rows;
+	mat2->data = aux.data;
+}
