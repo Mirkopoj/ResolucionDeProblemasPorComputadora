@@ -50,6 +50,8 @@ int main(int argc, char *argv[], char *envp[]) {
 	matrix_alloc(&ret);
 
 	matrix_inv(mat, &ret);
+	//matrix_swap(&mat, &ret);
+	//scalar_mult(mat, -1.0/15.0, &ret);
 	matrix_save(stdout, ret);
 
 	matrix_free(&mat);
