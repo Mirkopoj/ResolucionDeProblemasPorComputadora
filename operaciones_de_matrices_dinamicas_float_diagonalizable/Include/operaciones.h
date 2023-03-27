@@ -18,5 +18,6 @@ void matrix_save_setpretty(void);
 int matrix_alloc(matrix *mat);
 void matrix_free(matrix *mat);
 void matrix_swap(matrix *mat1, matrix *mat2);
+int matrix_diag(matrix mat, matrix *ret);
 
 #endif // !DEBUG

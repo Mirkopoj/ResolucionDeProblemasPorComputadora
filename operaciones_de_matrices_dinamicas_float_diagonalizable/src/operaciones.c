@@ -104,7 +104,7 @@ void matrix_save(FILE *stream, matrix mat) {
 	for (int i = 0; i < mat.rows; i++) {
 		pretty_print(stream, "│");
 		for (int j = 0; j < mat.cols; j++) {
-			fprintf(stream, "%7f", mat.data[i][j]);
+			fprintf(stream, "%7.2f", mat.data[i][j]);
 		}
 		pretty_print(stream, "│");
 		fprintf(stream, "\n");
@@ -205,4 +205,66 @@ void matrix_swap(matrix *mat1, matrix *mat2){
 	mat2->cols = aux.cols;
 	mat2->rows = aux.rows;
 	mat2->data = aux.data;
+}
+
+int matrix_det(matrix mat, float *ret){
+	if (mat.rows != mat.cols) { return -1; }
+	*ret = 0;
+	for (int i=0; i<mat.rows; i++) {
+		float mults = 1;
+		float multr = 1;
+		for (int j=0; j<mat.cols; j++) {
+			mults *= mat.data[(i+j)%mat.rows][j];
+			multr *= mat.data[(i+j)%mat.rows][mat.cols-j];
+		}
+		*ret += mults;
+		*ret -= multr;
+	}
+	return 0;
+}
+
+void restar_filas(float *f1, float *f2, int cols){
+	for (int i=0; i<cols; i++) {
+		f1[i] -= f2[i];
+	}
+}
+
+void fila_por_escalar(float *f, float n, int cols){
+	for (int i=0; i<cols; i++) {
+		f[i] *= n;
+	}
+}
+
+int matrix_clone(matrix src, matrix *dst){
+	if (src.rows != dst->rows || src.cols != dst->cols){
+		fprintf(stderr, "Matrix clone: Result matrix of invalid size, reallocating\n");
+		matrix_free(dst);
+		dst->rows=src.rows;
+		dst->cols=src.cols;
+		if (matrix_alloc(dst)<0) { return -1; }
+	}
+	for (int i=0; i<src.rows; i++) {
+		for (int j=0; j<src.cols; j++) {
+			dst->data[i][j] = src.data[i][j];
+		}
+	}
+	return 0;
+}
+
+int matrix_diag(matrix mat, matrix *ret){
+	int max_iter = mat.cols>mat.rows? mat.rows:mat.cols;
+	if (matrix_clone(mat, ret)<0) return -1;
+	for (int j=0; j<max_iter; j++) {
+		for (int i=0; i<mat.rows; i++) {
+			if (i!=j) {
+				float obj = ret->data[j][j];
+				float target = ret->data[i][j];
+				if (obj != 0.0 && target != 0.0) {
+					fila_por_escalar(ret->data[j], target/obj, mat.cols);
+					restar_filas(ret->data[i], ret->data[j], mat.cols);
+				}
+			}
+		}
+	}
+	return 0;
 }
