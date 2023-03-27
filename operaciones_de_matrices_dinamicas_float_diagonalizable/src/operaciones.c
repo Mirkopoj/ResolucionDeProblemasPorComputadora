@@ -251,7 +251,7 @@ int matrix_clone(matrix src, matrix *dst){
 	return 0;
 }
 
-int matrix_diag(matrix mat, matrix *ret){
+int matrix_diag_inv(matrix mat, matrix *ret, matrix *inv){
 	int max_iter = mat.cols>mat.rows? mat.rows:mat.cols;
 	if (matrix_clone(mat, ret)<0) return -1;
 	for (int j=0; j<max_iter; j++) {
@@ -260,6 +260,10 @@ int matrix_diag(matrix mat, matrix *ret){
 				float obj = ret->data[j][j];
 				float target = ret->data[i][j];
 				if (obj != 0.0 && target != 0.0) {
+					if (!inv) {
+						fila_por_escalar(inv->data[j], target/obj, mat.cols);
+						restar_filas(inv->data[i], ret->data[j], mat.cols);
+					}
 					fila_por_escalar(ret->data[j], target/obj, mat.cols);
 					restar_filas(ret->data[i], ret->data[j], mat.cols);
 				}
@@ -267,4 +271,17 @@ int matrix_diag(matrix mat, matrix *ret){
 		}
 	}
 	return 0;
+}
+
+int matrix_diag(matrix mat, matrix *ret){
+	return matrix_diag_inv(mat, ret, NULL);
+}
+
+int matrix_inv(matrix mat, matrix *inv){
+	matrix ret_aux;
+	int success = matrix_diag_inv(mat, &ret_aux, inv);
+	if (!ret_aux.data) {
+		matrix_free(&ret_aux);
+	}
+	return success;
 }
