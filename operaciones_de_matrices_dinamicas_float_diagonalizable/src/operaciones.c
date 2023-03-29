@@ -322,6 +322,14 @@ int matrix_det_core(matrix mat, float *ret, matrix *aux){
 	return 0;
 }
 
+int matrix_det(matrix mat, float *ret){
+	matrix aux;
+	aux.rows = mat.rows;
+	aux.cols = mat.cols;
+	if (matrix_alloc(&aux)<0) { return -1; }
+	return matrix_det_core(mat, ret, &aux);
+}
+
 /*
  *Returns 1 if matrix not inversible
  *Returns -1 in case of failure

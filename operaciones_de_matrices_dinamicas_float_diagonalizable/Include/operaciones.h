@@ -21,5 +21,6 @@ void matrix_swap(matrix *mat1, matrix *mat2);
 int matrix_diag(matrix mat, matrix *ret);
 int matrix_inv(matrix mat, matrix *inv);
 int matrix_solve(matrix mat, matrix *ret, matrix *solutions);
+int matrix_det(matrix mat, float *ret);
 
 #endif 
