@@ -1,12 +1,7 @@
 #ifndef OPS_MATRIX_H
 #define OPS_MATRIX_H
+#include "sparse_matrix.h"
 #include <stdio.h>
-
-typedef struct matrix {
-	int rows;
-	int cols;
-	int **data;
-} matrix ;
 
 void matrix_save(FILE *stream, matrix mat);
 int matrix_get(FILE *stream, matrix *mat);
