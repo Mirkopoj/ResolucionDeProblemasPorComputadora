@@ -14,13 +14,15 @@ typedef struct matrix {
 		int datum;
 	}* data;
 	int num_elements;
+	int assigned_elements;
 } matrix ;
 
 int get_element(matrix mat, coordinate cord, int *elem);
-void set_element(matrix mat, coordinate cord, int elem);
+int set_element(matrix mat, coordinate cord, int elem);
 void errase_element(matrix mat, coordinate cord);
 int rows(matrix mat);
 int cols(matrix mat);
 int element_count(matrix mat);
+int element_capacity(matrix mat);
 
 #endif // !SPARSE_MATRIX
