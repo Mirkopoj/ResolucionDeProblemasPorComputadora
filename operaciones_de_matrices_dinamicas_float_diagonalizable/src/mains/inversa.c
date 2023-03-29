@@ -49,9 +49,8 @@ int main(int argc, char *argv[], char *envp[]) {
 	ret.cols = mat.cols;
 	matrix_alloc(&ret);
 
-	matrix_inv(mat, &ret);
-	//matrix_swap(&mat, &ret);
-	//scalar_mult(mat, -1.0/15.0, &ret);
+	int retunt = matrix_inv(mat, &ret);
+	printf("inversa ret: %d\n", retunt);
 	matrix_save(stdout, ret);
 
 	matrix_free(&mat);

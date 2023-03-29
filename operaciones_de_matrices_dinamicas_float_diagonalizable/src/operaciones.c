@@ -207,22 +207,6 @@ void matrix_swap(matrix *mat1, matrix *mat2){
 	mat2->data = aux.data;
 }
 
-int matrix_det(matrix mat, float *ret){
-	if (mat.rows != mat.cols) { return -1; }
-	*ret = 0;
-	for (int i=0; i<mat.rows; i++) {
-		float mults = 1;
-		float multr = 1;
-		for (int j=0; j<mat.cols; j++) {
-			mults *= mat.data[(i+j)%mat.rows][j];
-			multr *= mat.data[(i+j)%mat.rows][mat.cols-j];
-		}
-		*ret += mults;
-		*ret -= multr;
-	}
-	return 0;
-}
-
 void restar_filas(float *f1, float *f2, int cols){
 	for (int i=0; i<cols; i++) {
 		f1[i] -= f2[i];
@@ -251,21 +235,23 @@ int matrix_clone(matrix src, matrix *dst){
 	return 0;
 }
 
-int matrix_diag_inv(matrix mat, matrix *ret, matrix *inv){
+int matrix_diag_core(matrix mat, matrix *ret, matrix *solutions, char preserve){
 	int max_iter = mat.cols>mat.rows? mat.rows:mat.cols;
-	if (matrix_clone(mat, ret)<0) return -1;
+	if (matrix_clone(mat, ret)<0) { return -1; }
 	for (int j=0; j<max_iter; j++) {
 		for (int i=0; i<mat.rows; i++) {
 			if (i!=j) {
 				float obj = ret->data[j][j];
 				float target = ret->data[i][j];
 				if (obj != 0.0 && target != 0.0) {
-					if (inv) {
-						fila_por_escalar(inv->data[j], target/obj, mat.cols);
-						restar_filas(inv->data[i], inv->data[j], mat.cols);
+					if (solutions) {
+						fila_por_escalar(solutions->data[j], target/obj, solutions->cols);
+						restar_filas(solutions->data[i], solutions->data[j], solutions->cols);
+						if (preserve) { fila_por_escalar(solutions->data[j], obj/target, solutions->cols); }
 					}
 					fila_por_escalar(ret->data[j], target/obj, mat.cols);
 					restar_filas(ret->data[i], ret->data[j], mat.cols);
+					if (preserve) { fila_por_escalar(ret->data[j], obj/target, mat.cols); }
 				}
 			}
 		}
@@ -273,20 +259,66 @@ int matrix_diag_inv(matrix mat, matrix *ret, matrix *inv){
 	return 0;
 }
 
+int matrix_solve(matrix mat, matrix *ret, matrix *solutions){
+	return matrix_diag_core(mat, ret, solutions, 0);
+}
+
 int matrix_diag(matrix mat, matrix *ret){
-	return matrix_diag_inv(mat, ret, NULL);
+	return matrix_diag_core(mat, ret, NULL, 0);
 }
 
 int matrix_make_identity(matrix *inv, int size){
-	if (inv) { matrix_free(inv); }
-	inv->rows = size;
-	inv->cols = size;
-	if (matrix_alloc(inv)<0) { return -1; }
+	if (inv->rows != size || inv->cols != size){
+		if (inv) { matrix_free(inv); }
+		inv->rows = size;
+		inv->cols = size;
+		if (matrix_alloc(inv)<0) { return -1; }
+	}
 	for (int i=0; i<size; i++) {
 		for (int j=0; j<size; j++) {
 			inv->data[i][j] = j==i? 1.0:0.0;
 		}
 	}
+	return 0;
+}
+
+void matrix_det_2_3(matrix mat, float *ret){
+	*ret = 0;
+	for (int i=0; i<mat.rows; i++) {
+		float mults = 1;
+		float multr = 1;
+		for (int j=0; j<mat.cols; j++) {
+			mults *= mat.data[(i+j)%mat.rows][j];
+			multr *= mat.data[(i+j)%mat.rows][mat.cols-j];
+		}
+		*ret += mults;
+		*ret -= multr;
+	}
+}
+
+int matrix_det_core(matrix mat, float *ret, matrix *aux){
+	if (mat.rows != mat.cols) { return -1; }
+	if (mat.rows < 4) {
+		matrix_det_2_3(mat, ret);
+		return 0;
+	}
+	if (aux->rows != mat.cols || aux->cols != mat.rows){
+		if (aux) { matrix_free(aux); }
+		aux->rows = mat.cols;
+		aux->cols = mat.rows;
+		if (matrix_alloc(aux)<0) { return -1; }
+	}
+	transpose(mat, aux);
+	matrix aux2;
+	aux2.rows = aux->rows;
+	aux2.cols = aux->cols;
+	if (matrix_alloc(&aux2)<0) { return -1; }
+	if (matrix_diag_core(*aux, &aux2, NULL, 1)) { return -1; }
+	*ret = 1.0;
+	for (int i=0; i<aux2.rows; i++) {
+		*ret *= aux2.data[i][i];
+	}
+	matrix_free(&aux2);
 	return 0;
 }
 
@@ -296,19 +328,19 @@ int matrix_make_identity(matrix *inv, int size){
  * */
 int matrix_inv(matrix mat, matrix *inv){
 	float det;
-	//if (matrix_det(mat, &det)<0) { return 1; }
-	//if (det == 0.0) { return 1; }
+	if (matrix_det_core(mat, &det, inv)<0) { return 1; }
+	if (det == 0.0) { return 1; }
 	if (matrix_make_identity(inv, mat.rows)<0) { return -1; }
 	matrix ret_aux;
 	ret_aux.rows = mat.rows;
 	ret_aux.cols = mat.cols;
-	matrix_alloc(&ret_aux);
-	int failure = matrix_diag_inv(mat, &ret_aux, inv);
+	if (matrix_alloc(&ret_aux)<0) { return -1; }
+	int failure = matrix_diag_core(mat, &ret_aux, inv, 0);
 	if (!failure) {
 		for (int i; i<inv->rows; i++) {
 			fila_por_escalar(inv->data[i], 1.0/ret_aux.data[i][i], inv->cols);
 		}
-	}
+	}	
 	if (!ret_aux.data) {
 		matrix_free(&ret_aux);
 	}
