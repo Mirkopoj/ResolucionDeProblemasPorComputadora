@@ -19,4 +19,4 @@ int matrix_alloc(matrix *mat);
 void matrix_free(matrix *mat);
 void matrix_swap(matrix *mat1, matrix *mat2);
 
-#endif 
+#endif

@@ -13,4 +13,4 @@ void scalar_mult(int mat[ROWS][COLS], int scalar, int res[ROWS][COLS]);
 void matrix_mult(int mat1[ROWS][COLS], int mat2[ROWS][COLS], int res[ROWS][COLS]);
 void matrix_save_setpretty(void);
 
-#endif // !DEBUG
+#endif 
