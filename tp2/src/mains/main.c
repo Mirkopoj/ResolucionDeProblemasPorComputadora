@@ -45,8 +45,10 @@ int main(int argc, char *argv[], char *envp[]) {
 	if (fi!=stdin) fclose(fi);
 
 	if (fo==stdout) printf("Mat1:\n");
+	if (fo==stdout) printf("%dx%d: %d alocados, %d ocupados\n", rows(mat1), cols(mat1), element_capacity(mat1), element_count(mat1));
 	matrix_save(fo, mat1);
 	if (fo==stdout) printf("Mat2:\n");
+	if (fo==stdout) printf("%dx%d: %d alocados, %d ocupados\n", rows(mat2), cols(mat2), element_capacity(mat2), element_count(mat2));
 	matrix_save(fo, mat2);
 
 	matrix ret;
@@ -64,10 +66,6 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	if (fo==stdout) printf("Mat1 * 5:\n");
 	scalar_mult(mat1, 5, &ret);
-	matrix_save(fo, ret);
-
-	if (fo==stdout) printf("Mat1 * Mat2:\n");
-	matrix_mult(mat1, mat2, &ret);
 	matrix_save(fo, ret);
 
 	matrix_free(&mat1);

@@ -18,8 +18,8 @@ typedef struct matrix {
 } matrix ;
 
 int get_element(matrix mat, coordinate cord, int *elem);
-int set_element(matrix mat, coordinate cord, int elem);
-void errase_element(matrix mat, coordinate cord);
+int set_element(matrix *mat, coordinate cord, int elem);
+void errase_element(matrix *mat, coordinate cord);
 int rows(matrix mat);
 int cols(matrix mat);
 int element_count(matrix mat);
