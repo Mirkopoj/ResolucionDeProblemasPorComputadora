@@ -112,12 +112,7 @@ void pretty_print(FILE *stream, const char *str) {
 	}
 }
 
-int ord(coordinate c, matrix m);
-
 void matrix_save(FILE *stream, matrix mat) {
-	for (int i=0; i<element_count(mat); i++) {
-		printf("%d %d %d %d\n", mat.data[i].c.row, mat.data[i].c.col, mat.data[i].datum, ord(mat.data[i].c, mat));
-	}
 	const int num_size = 7;
 	pretty_print(stream, "┌");
 	for (int i = 0; i < mat.cols * num_size; i++) {

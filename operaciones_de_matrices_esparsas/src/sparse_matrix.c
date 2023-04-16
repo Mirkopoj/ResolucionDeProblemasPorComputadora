@@ -1,4 +1,5 @@
 #include "../Include/sparse_matrix.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -16,16 +17,46 @@ int same_cord(coordinate a, coordinate b){
 	return 1;
 }
 
+int clamp(int value, int min, int max){
+	if (value < min) { return min; }
+	if (value > max) { return max; }
+	return value;
+}
+
+int DEBUG = 0;
+
+void print_search(matrix mat, int sptr){
+	if (!DEBUG) { return; }
+	int elems = element_count(mat);
+	printf("┌");
+	for (int i=0; i<elems-1; i++) {
+		printf("─────────────┬");
+	}
+	printf("─────────────┐\n│");
+
+	for (int i=0; i<elems; i++) {
+		printf("(%d,%d) =%2d, %2d│", mat.data[i].c.row, mat.data[i].c.col, mat.data[i].datum, ord(mat.data[i].c, mat));
+	}
+	
+	printf("\n└");
+	for (int i=0; i<elems-1; i++) {
+		printf("─────────────┴");
+	}
+	printf("─────────────┘\n");
+	for (int i=0; i<(sptr*9)+5;i++){
+		printf(" ");
+	}
+	printf("^%d\n", sptr);
+}
+
 int bin_search(matrix mat, coordinate cord, int *rptr){
 	int elems = element_count(mat);
 	if (!elems) { return -1; }
-	int sptr = ceil(((double)elems)/2);
+	int sptr = ((double)elems)/2;
 	int ref = ord(cord, mat);
-	if (ref == 0) {
-		sptr = 0;
-	}
-	double jumpd = ((double)elems)/2;
+	double jumpd = sptr;
 	while (1) {	
+		print_search(mat, sptr);
 		jumpd /= 2;
 		int jump = round(jumpd);
 		int ordinal = ord(mat.data[sptr].c, mat);
@@ -39,7 +70,11 @@ int bin_search(matrix mat, coordinate cord, int *rptr){
 		} else {
 			sptr += jump;
 		}
+		sptr = clamp(sptr, 0, elems-1);
 		if (sptr_prev == sptr) {
+			if (ref > ordinal) {
+				sptr++;
+			}
 			*rptr = sptr;
 			return -1;
 		}
