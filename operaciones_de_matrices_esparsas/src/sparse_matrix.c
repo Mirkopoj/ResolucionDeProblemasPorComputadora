@@ -43,7 +43,7 @@ void print_search(matrix mat, int sptr){
 		printf("─────────────┴");
 	}
 	printf("─────────────┘\n");
-	for (int i=0; i<(sptr*9)+5;i++){
+	for (int i=0; i<(sptr*14)+7;i++){
 		printf(" ");
 	}
 	printf("^%d\n", sptr);
