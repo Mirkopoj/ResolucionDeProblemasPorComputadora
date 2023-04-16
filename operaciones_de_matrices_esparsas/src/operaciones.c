@@ -15,7 +15,13 @@ int add(matrix mat1, matrix mat2, matrix *res) {
 	}
 	for (int i = 0; i < mat1.rows; i++) {
 		for (int j = 0; j < mat1.cols; j++) {
-			res->data[i][j] = mat1.data[i][j] + mat2.data[i][j];
+			int a;
+			int b;
+			coordinate c = {i,j};
+			if(get_element(mat1, c, &a)<0) { continue; }
+			if(get_element(mat2, c, &b)<0) { continue; }
+			int buff = a+b;
+			if(set_element(res, c, buff)<0) { return -1; }
 		}
 	}
 	return 0;
@@ -31,7 +37,14 @@ int transpose(matrix mat, matrix *res) {
 	}
 	for (int i = 0; i < mat.rows; i++) {
 		for (int j = 0; j < mat.cols; j++) {
-			res->data[j][i] = mat.data[i][j];
+			int buff;
+			coordinate c = {i,j};
+			coordinate tc = {j,i};
+			if(get_element(mat, c, &buff)<0) { 
+				errase_element(res, tc);
+				continue; 
+			}
+			if(set_element(res, tc, buff)<0) { return -1; }
 		}
 	}
 	return 0;
@@ -47,7 +60,14 @@ int scalar_mult(matrix mat, int scalar, matrix *res) {
 	}
 	for (int i = 0; i < mat.rows; i++) {
 		for (int j = 0; j < mat.cols; j++) {
-			res->data[i][j] = mat.data[i][j] * scalar;
+			int buff;
+			coordinate c = {i,j};
+			if(get_element(mat, c, &buff)<0) { 
+				errase_element(res, c);
+				continue; 
+			}
+			buff *= scalar;
+			if(set_element(res, c, buff)<0) { return -1; }
 		}
 	}
 	return 0;
@@ -79,7 +99,7 @@ int matrix_mult(matrix mat1, matrix mat2, matrix *res) {
 	transpose(mat2, &aux);
 	for (int i = 0; i < res->rows; i++) {
 		for (int j = 0; j < res->cols; j++) {
-			res->data[i][j] = dot(mat1.data[i], aux.data[j], mat1.rows);
+			//res->data[i][j] = dot(mat1.data[i], aux.data[j], mat1.rows);
 		}
 	}
 	matrix_free(&aux);
@@ -104,7 +124,15 @@ void matrix_save(FILE *stream, matrix mat) {
 	for (int i = 0; i < mat.rows; i++) {
 		pretty_print(stream, "│");
 		for (int j = 0; j < mat.cols; j++) {
-			fprintf(stream, "%7d", mat.data[i][j]);
+			int val_xy;
+			coordinate c = {i,j};
+			if (get_element(mat, c, &val_xy)<0) {
+				for (int i = 0; i < num_size; i++) {
+					fprintf(stream, " ");
+				}	
+			} else {
+				fprintf(stream, "%7d", val_xy);
+			}
 		}
 		pretty_print(stream, "│");
 		fprintf(stream, "\n");
@@ -124,29 +152,19 @@ void matrix_save(FILE *stream, matrix mat) {
  *
  * will return -1 on allocation fail*/
 int matrix_alloc(matrix *mat){
-	mat->data = (int **)calloc(mat->rows, sizeof(int *));
+	int allocation_size = (rows(*mat) * cols(*mat))/10;
+	mat->data = (struct element*)calloc(allocation_size, sizeof(struct element));
 	if (!mat->data) {
 		fprintf(stderr, "matrix_alloc: Failed to allocate matrix");
 		return -1;
 	}
-	for (int i = 0; i < mat->rows; i++) {
-		mat->data[i] = (int *)calloc(mat->cols, sizeof(int));
-		if (!mat->data[i]) {
-			fprintf(stderr, "matrix_alloc: Failed to allocate matrix");
-			matrix_free(mat);
-			return -1;
-		}
-	}
+	mat->num_elements = allocation_size;
+	mat->assigned_elements = 0;
 	return 0;
 }
 
 void matrix_free(matrix *mat){
 	if (!mat->data) { return; }
-	for (int i=0; i<mat->rows; i++) {
-		if (!mat->data[i]) { break; }
-		free(mat->data[i]);
-		mat->data[i] = NULL;
-	}
 	free(mat->data);
 	mat->data = NULL;
 	mat->rows=0;
@@ -165,13 +183,13 @@ void matrix_free(matrix *mat){
 int matrix_get(FILE *stream, matrix *mat) {
 	if (stream!=stdin) { rewind(stream); }
 	//Get matrix size
-	if (!stream) { 
-		fprintf(stderr, "matrix_get: EOF reached");
+	if (feof(stream)) { 
+		fprintf(stderr, "matrix_get: EOF reached on rows");
 		return -1;
 	}
 	fscanf(stream, "%d", &mat->rows);
-	if (!stream) {
-		fprintf(stderr, "matrix_get: EOF reached");
+	if (feof(stream)) {
+		fprintf(stderr, "matrix_get: EOF reached on cols");
 		return -1;
 	}
 	fscanf(stream, "%d", &mat->cols);
@@ -181,11 +199,14 @@ int matrix_get(FILE *stream, matrix *mat) {
 	//Populate matrix
 	for (int i = 0; i < mat->rows; i++) {
 		for (int j = 0; j < mat->cols; j++) {
-			if (!stream) {
+			if (feof(stream)) {
 				fprintf(stderr, "matrix_get: EOF reached");
-				return -1;
+				return 0;
 			}
-			fscanf(stream, "%d", &mat->data[i][j]);
+			int elem;
+			fscanf(stream, "%d %d %d", &i, &j, &elem);
+			coordinate c = {i,j};
+			set_element(mat, c, elem);
 		}
 	}
 

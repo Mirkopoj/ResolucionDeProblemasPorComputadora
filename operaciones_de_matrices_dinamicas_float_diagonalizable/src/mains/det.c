@@ -6,7 +6,6 @@
 
 int main(int argc, char *argv[], char *envp[]) {
 	FILE *fi = stdin;
-	FILE *fi2 = stdin;
 	FILE *fo = stdout;
 	for (int i=1; i<argc; i++) {
 		if(!strcmp(argv[i],"-i")){
@@ -15,10 +14,8 @@ int main(int argc, char *argv[], char *envp[]) {
 				fprintf(stderr, "-i miss used, should be \"-i <PATH-TO-INPUT-FILE>\"\n");
 				exit(-1);
 			}
-			FILE ** finput = &fi2;
-			if (fi == stdin) (finput = &fi);
-			*finput = fopen(argv[i], "r");
-			if (!*finput) {
+			fi = fopen(argv[i], "r");
+			if (!fi) {
 				fprintf(stderr, "fi: file failed to open");
 			}
 		}
@@ -38,45 +35,21 @@ int main(int argc, char *argv[], char *envp[]) {
 		}
 	}
 
-	matrix mat1;
-	matrix mat2;
+	matrix mat;
 
 	if (fi==stdin) printf("Ingrese valores de la matriz 1\n"); 
-	matrix_get(fi, &mat1);
-	if (fi==stdin) printf("Ingrese valores de la matriz 2\n"); 
-	matrix_get(fi2, &mat2);
+	matrix_get(fi, &mat);
 	if (fi!=stdin) fclose(fi);
 
 	if (fo==stdout) printf("Mat1:\n");
-	matrix_save(fo, mat1);
-	if (fo==stdout) printf("Mat2:\n");
-	matrix_save(fo, mat2);
+	matrix_save(fo, mat);
 
-	matrix ret;
-	ret.rows = mat1.rows;
-	ret.cols = mat1.cols;
-	matrix_alloc(&ret);
+	float ret;
 
-	if (fo==stdout) printf("Mat1 * Mat2:\n");
-	matrix_mult(mat1, mat2, &ret);
-	matrix_save(fo, ret);
+	matrix_det(mat, &ret);
+	printf("Det: %f\n", ret);
 
-	if (fo==stdout) printf("[Mat1]^T:\n");
-	transpose(mat1, &ret);
-	matrix_save(fo, ret);
-	matrix_swap(&mat1, &ret);
-
-	if (fo==stdout) printf("Mat1 * 5:\n");
-	scalar_mult(mat1, 5, &ret);
-	matrix_save(fo, ret);
-
-	if (fo==stdout) printf("Mat1 + Mat2:\n");
-	add(mat1, mat2, &ret);
-	matrix_save(fo, ret);
-
-	matrix_free(&mat1);
-	matrix_free(&mat2);
-	matrix_free(&ret);
+	matrix_free(&mat);
 	if (fo!=stdout) fclose(fo);
 	return 0;
 }

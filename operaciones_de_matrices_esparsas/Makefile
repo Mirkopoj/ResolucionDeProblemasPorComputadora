@@ -2,7 +2,7 @@ CC = gcc
 LDFLAGS = -lm
 CFLAGS = -O
 ifeq ($(DEBUG),1)
-	CFLAGS := -g3 $(CFLAGS)
+	CFLAGS += -g3
 endif
 
 MAINS = $(shell find src/mains/ -maxdepth 1 -type f -name "*.c")
