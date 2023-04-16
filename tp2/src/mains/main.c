@@ -58,14 +58,17 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	if (fo==stdout) printf("Mat1 + Mat2:\n");
 	add(mat1, mat2, &ret);
+	if (fo==stdout) printf("%dx%d: %d alocados, %d ocupados\n", rows(ret), cols(ret), element_capacity(ret), element_count(ret));
 	matrix_save(fo, ret);
 
 	if (fo==stdout) printf("[Mat1]^T:\n");
 	transpose(mat1, &ret);
+	if (fo==stdout) printf("%dx%d: %d alocados, %d ocupados\n", rows(ret), cols(ret), element_capacity(ret), element_count(ret));
 	matrix_save(fo, ret);
 
 	if (fo==stdout) printf("Mat1 * 5:\n");
 	scalar_mult(mat1, 5, &ret);
+	if (fo==stdout) printf("%dx%d: %d alocados, %d ocupados\n", rows(ret), cols(ret), element_capacity(ret), element_count(ret));
 	matrix_save(fo, ret);
 
 	matrix_free(&mat1);

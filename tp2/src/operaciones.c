@@ -18,8 +18,8 @@ int add(matrix mat1, matrix mat2, matrix *res) {
 			int a;
 			int b;
 			coordinate c = {i,j};
-			if(get_element(mat1, c, &a)<0) { return -1; }
-			if(get_element(mat2, c, &b)<0) { return -1; }
+			if(get_element(mat1, c, &a)<0) { continue; }
+			if(get_element(mat2, c, &b)<0) { continue; }
 			int buff = a+b;
 			if(set_element(res, c, buff)<0) { return -1; }
 		}
@@ -40,7 +40,10 @@ int transpose(matrix mat, matrix *res) {
 			int buff;
 			coordinate c = {i,j};
 			coordinate tc = {j,i};
-			if(get_element(mat, c, &buff)<0) { return -1; }
+			if(get_element(mat, c, &buff)<0) { 
+				errase_element(res, tc);
+				continue; 
+			}
 			if(set_element(res, tc, buff)<0) { return -1; }
 		}
 	}
@@ -59,7 +62,10 @@ int scalar_mult(matrix mat, int scalar, matrix *res) {
 		for (int j = 0; j < mat.cols; j++) {
 			int buff;
 			coordinate c = {i,j};
-			if(get_element(mat, c, &buff)<0) { return -1; }
+			if(get_element(mat, c, &buff)<0) { 
+				errase_element(res, c);
+				continue; 
+			}
 			buff *= scalar;
 			if(set_element(res, c, buff)<0) { return -1; }
 		}
