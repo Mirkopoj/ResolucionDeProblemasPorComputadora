@@ -91,6 +91,10 @@ int main(int argc, char *argv[], char *envp[]) {
            element_capacity(ret), element_count(ret));
   matrix_save(fo, ret);
 
+	if (fo==stdout) printf("Mat1 * Mat2:\n");
+	matrix_mult(mat1, mat2, &ret);
+	matrix_save(fo, ret);
+
   matrix_free(&mat1);
   matrix_free(&mat2);
   matrix_free(&ret);

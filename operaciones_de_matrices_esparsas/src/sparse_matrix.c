@@ -181,3 +181,27 @@ int element_count(matrix mat){
 int element_capacity(matrix mat){
 	return mat.num_elements;
 }
+
+struct element *get_data(matrix mat){
+	return mat.data;
+}
+
+void set_rows(matrix *mat, int rows){
+	mat->rows = rows;
+}
+
+void set_cols(matrix *mat, int cols){
+	mat->cols = cols;
+}
+
+void set_data(matrix *mat, struct element *data){
+	mat->data = data;
+}
+
+void set_num_elements(matrix *mat, int alloc_size){
+	mat->num_elements = alloc_size;
+}
+
+void set_assigned_elements(matrix *mat, int elem_count){
+	mat->assigned_elements = elem_count;
+}
