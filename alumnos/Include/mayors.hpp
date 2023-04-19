@@ -9,7 +9,7 @@ enum class Mayor {
 	EnviromentalEngineering,
 };
 
-extern std::string MayorNames[4];
+extern std::string MayorNames[];
 
 class MayorNode:public CoreNode
 {
