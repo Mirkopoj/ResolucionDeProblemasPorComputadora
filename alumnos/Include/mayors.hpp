@@ -1,5 +1,6 @@
 #pragma once
 #include "core_node.hpp"
+#include <string>
 
 enum class Mayor {
 	ElectronisEngineering,
@@ -7,6 +8,8 @@ enum class Mayor {
 	ComputingEngineering,
 	EnviromentalEngineering,
 };
+
+extern std::string MayorNames[4];
 
 class MayorNode:public CoreNode
 {
@@ -21,6 +24,7 @@ public:
 	MayorNode *get_next();
 	MayorNode *remove();
 	Mayor get_mayor();
+	void print();
 
 private:
 	Mayor mayor;

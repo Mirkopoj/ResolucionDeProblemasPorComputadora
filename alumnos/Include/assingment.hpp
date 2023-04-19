@@ -33,6 +33,7 @@ public:
 	AssingmentNode *get_next();
 	AssingmentNode *remove();
 	Assingment get_assingment();
+	void print();
 
 private:
 	Assingment assingment;

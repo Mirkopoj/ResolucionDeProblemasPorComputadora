@@ -1,4 +1,5 @@
 #include "../Include/core_list.hpp"
+#include <iostream>
 
 SinglyLinkedList::SinglyLinkedList(){
 	count = 0;
@@ -10,8 +11,13 @@ SinglyLinkedList::~SinglyLinkedList(){
 }
 
 void SinglyLinkedList::add(CoreNode *new_node){
+	if (!root) {
+		root = new_node;
+		count++;
+		return;
+	}
 	CoreNode *last = root;
-	while (last->get_next() != nullptr) {
+	while (last->get_next()) {
 		last = last->get_next();
 	}
 	last->append(new_node);
@@ -20,4 +26,15 @@ void SinglyLinkedList::add(CoreNode *new_node){
 
 int SinglyLinkedList::get_count(){
 	return count;
+}
+
+void SinglyLinkedList::print(){
+	if (!root) { return; }
+	CoreNode *iter = root;
+	if(iter) iter->print();
+	while (iter->get_next()) {
+		iter = iter->get_next();
+		iter->print();
+	}
+	std::cout << "\n";
 }

@@ -1,4 +1,12 @@
 #include "../Include/mayors.hpp"
+#include <iostream>
+
+std::string MayorNames[4] = {
+	"ElectronisEngineering",
+	"TelecomunicationsEngineering",
+	"ComputingEngineering",
+	"EnviromentalEngineering",
+};
 
 MayorNode::MayorNode(Mayor m):mayor(m), CoreNode(){}
 
@@ -14,4 +22,8 @@ MayorNode* MayorNode::remove(){
 
 Mayor MayorNode::get_mayor(){
 	return mayor;
+}
+
+void MayorNode::print() {
+	std::cout<<"->"<<MayorNames[int(mayor)];
 }

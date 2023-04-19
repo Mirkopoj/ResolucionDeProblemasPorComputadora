@@ -13,6 +13,7 @@ public:
 
 	void add(CoreNode *new_node);
 	int get_count();
+	void print();
 
 protected:
 	CoreNode *root;

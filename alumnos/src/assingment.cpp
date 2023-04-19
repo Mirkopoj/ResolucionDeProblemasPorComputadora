@@ -1,5 +1,6 @@
 #include "../Include/assingment.hpp"
 #include <string>
+#include <iostream>
 
 Assingment::Assingment(std::string n, int g):name(n), grade(g){}
 
@@ -27,4 +28,8 @@ AssingmentNode *AssingmentNode::remove(){
 
 Assingment AssingmentNode::get_assingment(){
 	return assingment;
+}
+
+void AssingmentNode::print() {
+	std::cout<<"->{"<<assingment.get_name()<<", "<<assingment.get_mark()<<"}";
 }

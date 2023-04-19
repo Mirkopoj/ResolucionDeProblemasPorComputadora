@@ -1,4 +1,5 @@
 #include "../Include/core_node.hpp"
+#include <iostream>
 
 CoreNode::CoreNode(...){}
 
