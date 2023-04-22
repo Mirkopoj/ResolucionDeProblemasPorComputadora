@@ -7,11 +7,27 @@ Student::Student(std::string n, std::string s, Date d):
 	name(n), surname(s), date_of_birth(d) { 
 		mayors = new MayorsList;
 		passed_assingments = new AssingmentsList;
-	}
+		rc = new unsigned int(1);
+}
+
+Student::Student(const Student &original):
+	name(original.name),
+	surname(original.surname),
+	date_of_birth(original.date_of_birth),
+	mayors(original.mayors),
+	passed_assingments(original.passed_assingments),
+	rc(original.rc)
+{
+	(*rc)++;
+}
 
 Student::~Student(){
-	delete mayors;
-	delete passed_assingments;
+	(*rc)--;
+	if (*rc == 0){
+		delete rc;
+		delete mayors;
+		delete passed_assingments;
+	}
 }
 
 void Student::afiliate_to(Mayor mayor){

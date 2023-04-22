@@ -1,10 +1,8 @@
 #pragma once
+#include <cstdint>
 #include <string>
-#include "assingment.hpp"
-#include "core_list.hpp"
 #include "date.hpp"
 #include "assingments_list.hpp"
-#include "mayors.hpp"
 #include "mayors_list.hpp"
 
 class Student
@@ -12,7 +10,7 @@ class Student
 public:
 	Student(std::string n, std::string s, Date d);
 	Student(Student &&) = default;
-	Student(const Student &) = default;
+	Student(const Student &);
 	Student &operator=(Student &&) = default;
 	Student &operator=(const Student &) = default;
 	~Student();
@@ -28,4 +26,5 @@ private:
 	Date date_of_birth;
 	MayorsList *mayors;
 	AssingmentsList *passed_assingments;
+	unsigned int *rc;
 };
