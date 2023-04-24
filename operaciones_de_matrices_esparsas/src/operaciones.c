@@ -27,6 +27,29 @@ int add(matrix mat1, matrix mat2, matrix *res) {
 	return 0;
 }
 
+int transpose(matrix mat, matrix *res) {
+	if (rows(mat) != cols(*res) || cols(mat) != rows(*res)) {
+		fprintf(stderr, "Matrix transpose: Result matrix of invalid size, reallocating\n");
+		matrix_free(res);
+		set_rows(res, cols(mat));
+		set_cols(res, rows(mat));
+		if (matrix_alloc(res)<0) { return -1; }
+	}
+	for (int i = 0; i < rows(mat); i++) {
+		for (int j = 0; j < cols(mat); j++) {
+			int buff;
+			coordinate c = {i,j};
+			coordinate tc = {j,i};
+			if(get_element(mat, c, &buff)<0) { 
+				errase_element(res, tc);
+				continue; 
+			}
+			if(set_element(res, tc, buff)<0) { return -1; }
+		}
+	}
+	return 0;
+}
+
 int scalar_mult(matrix mat, int scalar, matrix *res) {
 	if (rows(mat) != rows(*res) || cols(mat) != cols(*res)){
 		fprintf(stderr, "Matrix saclar multiply: Result matrix of invalid size, reallocating\n");
