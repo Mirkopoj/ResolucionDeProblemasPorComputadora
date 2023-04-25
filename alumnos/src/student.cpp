@@ -53,10 +53,16 @@ int Student::age(){
 	std::tm *now = std::localtime(&t);
 	
 	int years = now->tm_year - date_of_birth.get_year() + 1900;
-	if (  now->tm_mon - date_of_birth.get_month() < 0 ||
-			now->tm_mday - date_of_birth.get_day()) {
+	int month_dif = now->tm_mon+1 - date_of_birth.get_month();
+	if ( month_dif < 0){
 		years--;
+		return years;
 	} 
+
+	if (  month_dif == 0 &&
+			now->tm_mday - date_of_birth.get_day() < 0) {
+		years--;
+	}
 
 	return years;
 }
