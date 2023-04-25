@@ -1,7 +1,9 @@
 #include "../Include/core_node.hpp"
 #include <iostream>
 
-CoreNode::CoreNode(...){}
+CoreNode::CoreNode(...){
+	next = nullptr;
+}
 
 CoreNode::~CoreNode(){
 	delete next;
