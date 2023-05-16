@@ -52,8 +52,19 @@ Test(divition_operand, test) {
 	cr_assert_eq(cr, r);
 }
 
-#include <iostream>
-#include <iomanip>
+Test(divition_operand_exception, test) {
+	Polinomial a({{4.0, 3.0, 2.0, 0.0, 0.0}});
+	Polinomial b({{0.0, 0.0, 0.0}});
+	bool exception = false;
+	try{
+		std::tuple<Polinomial, Polinomial> c = a/b;
+	}
+	catch(Polinomial::ZeroDivision){
+		exception = true;
+	}
+	cr_assert(exception);
+}
+
 #include <math.h>
 Test(evaluation_operand, test) {
 	Polinomial a({{4.0, 3.0, 2.0, 0.0, 0.0}});

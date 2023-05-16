@@ -217,7 +217,11 @@ std::tuple<Polinomial, Polinomial> Polinomial::division(Polinomial d) {
 	return {q, r};
 }
 
-std::tuple<Polinomial, Polinomial> Polinomial::operator/(Polinomial& b){
+std::tuple<Polinomial, Polinomial> Polinomial::operator/(Polinomial& b) noexcept(false){
+	if (b.terms.size() == 0) {
+		ZeroDivision e;
+		throw e;
+	}
 	return division(b);
 }
 
@@ -233,4 +237,16 @@ double Polinomial::evaluate(const double x) const {
 
 double Polinomial::operator()(const double x) const {
 	return evaluate(x);
+}
+
+Polinomial::ZeroDivision::ZeroDivision(): std::exception() {}
+
+Polinomial::ZeroDivision::~ZeroDivision(){}
+
+Polinomial::ZeroDivision::ZeroDivision(ZeroDivision && copy) {}
+
+Polinomial::ZeroDivision::ZeroDivision(const ZeroDivision & copy) {}
+
+const char * Polinomial::ZeroDivision::what() const noexcept(true){
+	return msg;
 }

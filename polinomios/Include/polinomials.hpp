@@ -50,9 +50,15 @@ public:
 	Polinomial &operator=(const Polinomial &);
 	~Polinomial();
 
-	class zero_divition : public std::exception {
+	class ZeroDivision : public std::exception {
+		public:
+		ZeroDivision();
+		~ZeroDivision();
+		ZeroDivision(ZeroDivision &&);
+		ZeroDivision(const ZeroDivision &);
+		const char * what() const noexcept(true) override;
+		private:
 		const char * msg = "Atempt to divide by zero";
-		const char * what() const throw() override;
 	};
 	
 	void print();
@@ -70,7 +76,6 @@ public:
 	Polinomial operator*(const term&);
 	Polinomial operator*(const double) const;
 	double operator()(const double) const;
-	std::tuple<Polinomial, Polinomial> operator/(Polinomial&);
+	std::tuple<Polinomial, Polinomial> operator/(Polinomial&) noexcept(false);
 	bool operator==(const Polinomial&);
 };
-
