@@ -1,4 +1,5 @@
 #pragma once
+#include <complex>
 #include <cstdint>
 #include <cwchar>
 #include <span>
@@ -9,38 +10,19 @@
 
 class Polinomial {
 private:
+
 	typedef struct term{
-		int order;
-		double coeficient;
-		struct term operator*(term b);
-		struct term operator*(double b);
-		Polinomial operator*(const Polinomial& b);
-		struct term operator/(term b);
+		int m_order;
+		double m_coeficient;
+		struct term operator*(term);
+		struct term operator*(double);
+		Polinomial operator*(const Polinomial&);
+		struct term operator/(term);
 		struct term operator-() const;
 	} term;
 
-	typedef struct {
-		uint32_t pos;
-		double coeficient;
-	} vec_term;
-
-	Polinomial add(const Polinomial b) const;
-	Polinomial multiplication(const Polinomial b) const;
-	std::tuple<Polinomial, Polinomial> division(const Polinomial divisor);
-	Polinomial evaluate(const Polinomial a) const;
-	std::vector<double> roots(const Polinomial a) const;
-	double evaluate(const double) const;
-
-	Polinomial add_term(const term b) const;
-	vec_term get_term(int order);
-	int get_term_count();
-	void sort();
-
-	void vec_init(std::vector<term>);
-
-	std::vector<term> terms;
-	
 public:
+
 	Polinomial(std::vector<term> t);
 	Polinomial(std::span<const double> c);
 	Polinomial() = default;
@@ -76,6 +58,36 @@ public:
 	Polinomial operator*(const term&);
 	Polinomial operator*(const double) const;
 	double operator()(const double) const;
+	std::complex<double> operator()(const std::complex<double>) const;
+	Polinomial operator()(const Polinomial) const;
 	std::tuple<Polinomial, Polinomial> operator/(Polinomial&) noexcept(false);
 	bool operator==(const Polinomial&);
+	Polinomial operator*() const;
+
+	std::vector<std::complex<double>> roots() const;
+	std::vector<double> r_roots() const;
+
+private:
+
+	typedef struct {
+		uint32_t m_pos;
+		double m_coeficient;
+	} vec_term;
+
+	Polinomial m_add(const Polinomial) const;
+	Polinomial m_multiplication(const Polinomial) const;
+	std::tuple<Polinomial, Polinomial> m_division(const Polinomial divisor);
+	Polinomial m_evaluate(const Polinomial) const;
+	double m_evaluate(const double) const;
+	std::complex<double> m_evaluate(const std::complex<double>) const;
+
+	Polinomial add_term(const term) const;
+	vec_term get_term(int order);
+	int get_term_count();
+	void sort();
+	Polinomial derivate() const;
+
+	void vec_init(std::vector<term>);
+
+	std::vector<term> m_terms;
 };
