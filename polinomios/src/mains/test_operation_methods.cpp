@@ -1,6 +1,8 @@
 #include <complex>
 #include <criterion/criterion.h>
 #include <criterion/internal/assert.h>
+#include <cstdint>
+#include <limits>
 #include <tuple>
 #include <vector>
 
@@ -90,10 +92,22 @@ Test(derivation_operand, test) {
 	cr_assert_eq(expected, r);
 }
 
-Test(roots, test) {
-	Polinomial a({{4.0, 3.0, 2.0, 0.0, 0.0}});
-	std::vector<std::complex<double>> r = a.roots();
-	std::vector<std::complex<double>> expected = {};
-	cr_assert_eq(expected, r);
+#include <iomanip>
+#include <iostream>
+Test(c_roots, test) {
+	Polinomial a({{1.0, 1.0, -6.0, 1.0, -3.0}});
+	std::vector<std::complex<double>> r = a.roots((uint32_t)100099);
+	for (std::complex<double> i : r) {
+		cr_assert(abs(a(i)) <= std::numeric_limits<double>::epsilon() * 35);
+	}
+}
+
+Test(r_roots, test) {
+	Polinomial a({{1.0, -15.0, 70.0, -120.0, 64.0}});
+	std::vector<double> r = a.r_roots();
+	cr_assert_eq(r.size(), 4);
+	for (double i : r) {
+		cr_assert_eq(a(i), 0.0);
+	}
 }
 

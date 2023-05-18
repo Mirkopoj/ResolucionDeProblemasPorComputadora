@@ -1,8 +1,10 @@
 #include "../Include/polinomials.hpp"
+#include <array>
 #include <cmath>
 #include <complex>
 #include <criterion/hooks.h>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <limits>
 #include <math.h>
@@ -98,8 +100,8 @@ bool esentialy_equal(double a, double b){
 
 bool practicaly_equal(double a, double b){
 	return std::fabs(a-b)
-		<= (std::max(fabs(a),fabs(b)))
-		* std::numeric_limits<double>::epsilon();
+		<= (std::max(fabs(a),fabs(b))) *
+		std::numeric_limits<double>::epsilon();
 }
 
 bool Polinomial::operator==(const Polinomial& b){
@@ -312,33 +314,55 @@ Polinomial Polinomial::operator*() const {
 	return derivate();
 }
 
-std::vector<std::complex<double>> Polinomial::roots() const {
+#include <iostream>
+std::vector<std::complex<double>> Polinomial::aberth_roots(double min_change, uint32_t max_iter) const {
 	Polinomial der = **this;
 	int deg = m_terms[0].m_order;
 	std::vector<std::complex<double>> ret;
 	ret.reserve(deg);
-	constexpr auto _2π {std::numbers::pi * 2.0};
+	constexpr auto π_2 {std::numbers::pi / 2.0};
    constexpr auto mag {1.0};
+	//Initial aproximations on a quarte of the unity circle
 	for (int i=0; i<deg; i++) {
-		const auto θ {i * _2π/deg};
+		const auto θ {i * π_2/deg};
 		std::complex<double> a = std::polar(mag, θ);
 		ret.push_back(a);
 	}
+	ret.shrink_to_fit();
 	double change = 1.0;
-	while (!practicaly_equal(change, 0.0)) {
+	uint32_t iter_cont = 0;
+	while (!practicaly_equal(change, 0.0) && change>min_change && iter_cont<max_iter) {
+		iter_cont++;
 		change = 0.0;
-		for (std::complex<double> &i : ret) {
-			std::complex<double> aux = (*this)(i)/der(i);
+		int zindex = 0;
+		for (std::complex<double> &zi : ret) {
+			std::complex<double> aux = (*this)(zi)/der(zi);
 			std::complex<double> sum = 0.0;
-			for (std::complex<double> j : ret) {
-				sum += (i!=j)? (1.0/(i-j)):0.0;
+			for (std::complex<double> zj : ret) {
+				sum += (zi!=zj)? (1.0/(zi-zj)):0.0;
 			}
-			std::complex<double> n_i = (aux)/(1.0-(aux*sum));
-			change += abs(i-n_i);
-			i=n_i;
+			std::complex<double> wi = (aux)/(1.0-(aux*sum));
+			//Ocational random noise to scape from oscilating values
+			if (!(iter_cont%10000)) {
+				double r_n = ((double)std::rand()/RAND_MAX)
+					*3
+					*std::numeric_limits<double>::epsilon()
+					*abs(wi);
+				std::complex<double> r_w(r_n,r_n);
+				wi += r_w;
+			}
+			change = std::max(change, abs(wi));
+			zi-=wi;
 		}
 	}
+	std::sort(ret.begin(), ret.end(), []
+			(const std::complex<double> &a, const std::complex<double> &b)
+			{ return (a.real()<b.real()); });
 	return ret;
+}
+
+std::vector<std::complex<double>> Polinomial::roots() const {
+	return aberth_roots(0.0, std::numeric_limits<uint32_t>::max());
 }
 
 std::vector<double> Polinomial::r_roots() const {
@@ -353,4 +377,44 @@ std::vector<double> Polinomial::r_roots() const {
 	}
 	ret.shrink_to_fit();
 	return ret;
+}
+
+std::vector<std::complex<double>> Polinomial::roots(double min_change) const {
+	return aberth_roots(min_change, std::numeric_limits<uint32_t>::max());
+}
+
+std::vector<double> Polinomial::r_roots(double min_change) const {
+	std::vector<double> ret;
+	std::vector<std::complex<double>> c_roots;
+	ret.reserve(c_roots.size());
+	c_roots = roots(min_change);
+	for (std::complex<double> i : c_roots) {
+		if (practicaly_equal(i.imag(), 0.0)) {
+			ret.push_back(i.real());
+		}	
+	}
+	ret.shrink_to_fit();
+	return ret;
+}
+
+std::vector<std::complex<double>> Polinomial::roots(uint32_t max_iter) const {
+	return aberth_roots(0.0, max_iter);
+}
+
+std::vector<double> Polinomial::r_roots(uint32_t max_iter) const {
+	std::vector<double> ret;
+	std::vector<std::complex<double>> c_roots;
+	ret.reserve(c_roots.size());
+	c_roots = roots(max_iter);
+	for (std::complex<double> i : c_roots) {
+		if (practicaly_equal(i.imag(), 0.0)) {
+			ret.push_back(i.real());
+		}	
+	}
+	ret.shrink_to_fit();
+	return ret;
+}
+
+uint32_t Polinomial::degree(){
+	return m_terms.size()>0? m_terms[0].m_order:0;
 }

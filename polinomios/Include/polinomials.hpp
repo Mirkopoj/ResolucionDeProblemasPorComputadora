@@ -59,6 +59,7 @@ public:
 	Polinomial operator*(const double) const;
 	double operator()(const double) const;
 	std::complex<double> operator()(const std::complex<double>) const;
+	std::complex<long double> operator()(const std::complex<long double>) const;
 	Polinomial operator()(const Polinomial) const;
 	std::tuple<Polinomial, Polinomial> operator/(Polinomial&) noexcept(false);
 	bool operator==(const Polinomial&);
@@ -66,6 +67,12 @@ public:
 
 	std::vector<std::complex<double>> roots() const;
 	std::vector<double> r_roots() const;
+	std::vector<std::complex<double>> roots(double) const;
+	std::vector<double> r_roots(double) const;
+	std::vector<std::complex<double>> roots(uint32_t) const;
+	std::vector<double> r_roots(uint32_t) const;
+
+	uint32_t degree();
 
 private:
 
@@ -80,12 +87,14 @@ private:
 	Polinomial m_evaluate(const Polinomial) const;
 	double m_evaluate(const double) const;
 	std::complex<double> m_evaluate(const std::complex<double>) const;
+	std::complex<long double> m_evaluate(const std::complex<long double>) const;
 
 	Polinomial add_term(const term) const;
 	vec_term get_term(int order);
 	int get_term_count();
 	void sort();
 	Polinomial derivate() const;
+	std::vector<std::complex<double>> aberth_roots(double, uint32_t) const;
 
 	void vec_init(std::vector<term>);
 
