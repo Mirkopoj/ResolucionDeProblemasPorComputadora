@@ -2,27 +2,46 @@
 #include "polinomials.hpp"
 #include <vector>
 
-class SplineFactory {
-	private:
-		typedef struct {
-			double x;
-			double p;
-		} knot;
+typedef struct {
+	double x;
+	double p;
+} knot;
 
-		std::vector<knot> m_knots;
-		/*
-		x = (xk,xk+1)
-		t =(x-xk)/(xk+1-x)*/
-		const Polinomial h00 = Polinomial({{ 2.0,-3.0, 0.0, 1.0}});
-		const Polinomial h10 = Polinomial({{ 1.0,-2.0, 1.0, 0.0}});
-		const Polinomial h01 = Polinomial({{-2.0, 3.0, 0.0, 0.0}});
-		const Polinomial h11 = Polinomial({{ 1.0,-1.0, 0.0, 0.0}});
+class Spline {
+public:
+	Spline(std::vector<knot>);
+	Spline(std::vector<knot>, double);
+	Spline(Spline &&) = default;
+	Spline(const Spline &) = default;
+	Spline &operator=(Spline &&) = default;
+	Spline &operator=(const Spline &) = default;
+	~Spline() = default;
 
-		double c;
+	class OutOfRange : public std::exception {
+		public:
+		OutOfRange();
+		~OutOfRange();
+		OutOfRange(OutOfRange &&);
+		OutOfRange(const OutOfRange &);
+		const char * what() const noexcept(true) override;
+		private:
+		const char * msg = "Atempt to evaluate spline out of range";
+	};
+	
+	double operator()(double) const noexcept(false);
 
-		double m(int) const;
+private:
+	std::vector<Polinomial> m_splines;
+	std::vector<knot> m_knots;
 
-		double t_(double, int) const;
+	void splines_init(std::vector<knot>, double);
 
-		Polinomial gen_spline(int) const;
+	double t_(double, int) const;
+
+	double m(int, double) const;
+
+	Polinomial gen_spline_section(int, double) const;
+
+	double evaluate(double) const noexcept(false);
+
 };
