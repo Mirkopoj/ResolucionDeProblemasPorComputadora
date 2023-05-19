@@ -52,11 +52,11 @@ Polinomial Polinomial::add_term(const term b) const {
 	return res;
 };
 
-Polinomial Polinomial::operator+(const Polinomial& b){
+Polinomial Polinomial::operator+(const Polinomial& b) const{
 	return m_add(b);
 }
 
-Polinomial Polinomial::operator+(const term& b){
+Polinomial Polinomial::operator+(const term& b) const{
 	return add_term(b);
 }
 
@@ -74,11 +74,11 @@ Polinomial Polinomial::operator-() const {
 	return *this*(-1.0);
 }
 
-Polinomial Polinomial::operator-(const Polinomial& b){
+Polinomial Polinomial::operator-(const Polinomial& b) const {
 	return m_add(-b);
 }
 
-Polinomial Polinomial::operator-(const term& b){
+Polinomial Polinomial::operator-(const term& b) const {
 	return add_term(-b);
 }
 
@@ -104,7 +104,7 @@ bool practicaly_equal(double a, double b){
 		std::numeric_limits<double>::epsilon();
 }
 
-bool Polinomial::operator==(const Polinomial& b){
+bool Polinomial::operator==(const Polinomial& b) const {
 	if (m_terms.size() != b.m_terms.size()){ return false; }
 	for (term i : b.m_terms) {
 		double a = i.m_coeficient;
@@ -114,7 +114,7 @@ bool Polinomial::operator==(const Polinomial& b){
 	return true;
 }
 
-Polinomial::vec_term Polinomial::get_term(int order){
+Polinomial::vec_term Polinomial::get_term(int order) const {
 	uint32_t index = 0;
 	for (term i : m_terms) {
 		if (i.m_order == order) {
@@ -125,11 +125,12 @@ Polinomial::vec_term Polinomial::get_term(int order){
 	return {index, 0};
 }
 
-void Polinomial::print(){
-	for (term i : m_terms) {
-		printf("%.2fX^%d + ", i.m_coeficient, i.m_order);
+std::ostream &operator<<(std::ostream &out, const Polinomial &p){
+	for (Polinomial::term i : p.m_terms) {
+		out << i.m_coeficient << "X^" << i.m_order << " + ";
 	}
-	printf("0\n");
+	out << "0";
+	return out;
 }
 
 void Polinomial::vec_init(std::vector<term> t){
@@ -141,6 +142,7 @@ void Polinomial::vec_init(std::vector<term> t){
 		}
 	}
 	m_terms.shrink_to_fit();
+	sort();
 }
 
 Polinomial &Polinomial:: operator=(Polinomial &&a){
@@ -193,11 +195,11 @@ Polinomial::term Polinomial::term::operator/(term b){
 	};
 }
 
-Polinomial Polinomial::operator*(const Polinomial& b){
+Polinomial Polinomial::operator*(const Polinomial& b) const {
 	return m_multiplication(b);
 }
 
-Polinomial Polinomial::operator*(const term& b){
+Polinomial Polinomial::operator*(const term& b) const {
 	Polinomial p({b});
 	return m_multiplication(p);
 }
@@ -219,8 +221,7 @@ void Polinomial::sort() {
 			{ return (a.m_order>b.m_order); });
 }
 
-std::tuple<Polinomial, Polinomial> Polinomial::m_division(Polinomial d) {
-	sort();
+std::tuple<Polinomial, Polinomial> Polinomial::m_division(Polinomial d) const {
 	d.sort();
 	Polinomial q;
 	Polinomial r = *this;
@@ -232,7 +233,7 @@ std::tuple<Polinomial, Polinomial> Polinomial::m_division(Polinomial d) {
 	return {q, r};
 }
 
-std::tuple<Polinomial, Polinomial> Polinomial::operator/(Polinomial& b) noexcept(false){
+std::tuple<Polinomial, Polinomial> Polinomial::operator/(Polinomial& b) const noexcept(false){
 	if (b.m_terms.size() == 0) {
 		ZeroDivision e;
 		throw e;
@@ -314,15 +315,16 @@ Polinomial Polinomial::operator*() const {
 	return derivate();
 }
 
-#include <iostream>
 std::vector<std::complex<double>> Polinomial::aberth_roots(double min_change, uint32_t max_iter) const {
-	Polinomial der = **this;
+	Polinomial der = derivate();
 	int deg = m_terms[0].m_order;
 	std::vector<std::complex<double>> ret;
 	ret.reserve(deg);
 	constexpr auto π_2 {std::numbers::pi / 2.0};
    constexpr auto mag {1.0};
-	//Initial aproximations on a quarte of the unity circle
+	//Initial aproximations on a quarter of the unity circle
+	//this is so that no simetrical starting points apear 
+	//arround any axis
 	for (int i=0; i<deg; i++) {
 		const auto θ {i * π_2/deg};
 		std::complex<double> a = std::polar(mag, θ);
@@ -415,6 +417,6 @@ std::vector<double> Polinomial::r_roots(uint32_t max_iter) const {
 	return ret;
 }
 
-uint32_t Polinomial::degree(){
+uint32_t Polinomial::degree() const {
 	return m_terms.size()>0? m_terms[0].m_order:0;
 }

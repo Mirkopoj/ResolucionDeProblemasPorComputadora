@@ -2,6 +2,7 @@
 #include <complex>
 #include <cstdint>
 #include <cwchar>
+#include <ostream>
 #include <span>
 #include <string>
 #include <vector>
@@ -43,26 +44,36 @@ public:
 		const char * msg = "Atempt to divide by zero";
 	};
 	
-	void print();
 
-	Polinomial operator+(const Polinomial&);
-	Polinomial operator+(const term&);
+	Polinomial operator+(const Polinomial&) const;
+	Polinomial operator+(const term&) const;
 	Polinomial operator+=(const Polinomial&);
 	Polinomial operator+=(const term&);
-	Polinomial operator-(const Polinomial&);
-	Polinomial operator-(const term&);
+
+	Polinomial operator-(const Polinomial&) const;
+	Polinomial operator-(const term&) const;
 	Polinomial operator-=(const Polinomial&);
 	Polinomial operator-=(const term&);
 	Polinomial operator-() const;
-	Polinomial operator*(const Polinomial&);
-	Polinomial operator*(const term&);
+
+	Polinomial operator*(const Polinomial&) const;
+	Polinomial operator*(const term&) const;
 	Polinomial operator*(const double) const;
+	Polinomial operator*=(const Polinomial&) const;
+	Polinomial operator*=(const term&) const;
+	Polinomial operator*=(const double) const;
+
 	double operator()(const double) const;
 	std::complex<double> operator()(const std::complex<double>) const;
-	std::complex<long double> operator()(const std::complex<long double>) const;
 	Polinomial operator()(const Polinomial) const;
-	std::tuple<Polinomial, Polinomial> operator/(Polinomial&) noexcept(false);
-	bool operator==(const Polinomial&);
+
+	std::tuple<Polinomial, Polinomial> operator/(Polinomial&) const noexcept(false);
+	std::tuple<Polinomial, Polinomial> operator/=(Polinomial&) noexcept(false);
+
+	bool operator==(const Polinomial&) const;
+
+	friend std::ostream &operator<<(std::ostream &out, const Polinomial &p);
+
 	Polinomial operator*() const;
 
 	std::vector<std::complex<double>> roots() const;
@@ -72,7 +83,7 @@ public:
 	std::vector<std::complex<double>> roots(uint32_t) const;
 	std::vector<double> r_roots(uint32_t) const;
 
-	uint32_t degree();
+	uint32_t degree() const;
 
 private:
 
@@ -83,15 +94,15 @@ private:
 
 	Polinomial m_add(const Polinomial) const;
 	Polinomial m_multiplication(const Polinomial) const;
-	std::tuple<Polinomial, Polinomial> m_division(const Polinomial divisor);
+	std::tuple<Polinomial, Polinomial> m_division(const Polinomial divisor) const;
 	Polinomial m_evaluate(const Polinomial) const;
 	double m_evaluate(const double) const;
 	std::complex<double> m_evaluate(const std::complex<double>) const;
 	std::complex<long double> m_evaluate(const std::complex<long double>) const;
 
 	Polinomial add_term(const term) const;
-	vec_term get_term(int order);
-	int get_term_count();
+	vec_term get_term(int order) const;
+	int get_term_count() const;
 	void sort();
 	Polinomial derivate() const;
 	std::vector<std::complex<double>> aberth_roots(double, uint32_t) const;
