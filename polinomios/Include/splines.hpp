@@ -3,8 +3,8 @@
 #include <vector>
 
 typedef struct {
-	double x;
-	double p;
+	double m_x;
+	double m_p;
 } knot;
 
 class Spline {
