@@ -28,6 +28,10 @@ double Spline::t_(double x, int k) const {
 }
 
 void Spline::splines_init(std::vector<knot> ks, double c) {
+	if (ks.size()<4) {
+		InsuficientKnots e;
+		throw e;
+	}
 	m_knots = ks;
 	for (size_t k=1; k<ks.size()-1; k++ ) {
 		m_splines.push_back(gen_spline_section(k, c));
@@ -56,5 +60,9 @@ double Spline::operator()(double x) const noexcept(false){
 }
 
 const char * Spline::OutOfRange::what() const noexcept(true){
+	return msg;
+}
+
+const char * Spline::InsuficientKnots::what() const noexcept(true){
 	return msg;
 }

@@ -9,8 +9,8 @@ typedef struct {
 
 class Spline {
 public:
-	Spline(std::vector<knot>);
-	Spline(std::vector<knot>, double);
+	Spline(std::vector<knot>) noexcept(false);
+	Spline(std::vector<knot>, double) noexcept(false);
 	Spline(Spline &&) = default;
 	Spline(const Spline &) = default;
 	Spline &operator=(Spline &&) = default;
@@ -19,13 +19,24 @@ public:
 
 	class OutOfRange : public std::exception {
 		public:
-		OutOfRange();
-		~OutOfRange();
-		OutOfRange(OutOfRange &&);
-		OutOfRange(const OutOfRange &);
+		OutOfRange() = default;
+		~OutOfRange() = default;
+		OutOfRange(OutOfRange &&) = default;
+		OutOfRange(const OutOfRange &) = default;
 		const char * what() const noexcept(true) override;
 		private:
 		const char * msg = "Atempt to evaluate spline out of range";
+	};
+	
+	class InsuficientKnots : public std::exception {
+		public:
+		InsuficientKnots() = default;
+		~InsuficientKnots() = default;
+		InsuficientKnots(InsuficientKnots &&) = default;
+		InsuficientKnots(const InsuficientKnots &) = default;
+		const char * what() const noexcept(true) override;
+		private:
+		const char * msg = "Atempt to crete spline with insuficient knots";
 	};
 	
 	double operator()(double) const noexcept(false);
@@ -34,7 +45,7 @@ private:
 	std::vector<Polinomial> m_splines;
 	std::vector<knot> m_knots;
 
-	void splines_init(std::vector<knot>, double);
+	void splines_init(std::vector<knot>, double) noexcept(false);
 
 	double t_(double, int) const;
 

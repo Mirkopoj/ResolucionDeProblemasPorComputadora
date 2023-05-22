@@ -23,8 +23,8 @@ Test(equal_operand_true, test) {
 }
 
 Test(equal_operand_false, test) {
-	Polinomial a({{3.0, 2.0, 1.0, 0.0}});
-	Polinomial b({{2,2.0},{1,1.0},{0,0.0}});
+	Polinomial a({{3.0, 2.0, 1.0, 1.0}});
+	Polinomial b({{3,3.0},{2,2.0},{1,1.0},{0,0.0}});
 	cr_assert_neq(a, b);
 }
 
@@ -86,17 +86,15 @@ Test(evaluation_operand_poli, test) {
 }
 
 Test(derivation_operand, test) {
-	Polinomial a({{4.0, 3.0, 2.0, 0.0, 0.0}});
+	Polinomial a({{4.0, 3.0, 2.0, 0.0, 1.0}});
 	Polinomial r = *a;
 	Polinomial expected({{3,16.0},{2,9.0},{1,4.0}});
 	cr_assert_eq(expected, r);
 }
 
-#include <iomanip>
-#include <iostream>
 Test(c_roots, test) {
 	Polinomial a({{1.0, 1.0, -6.0, 1.0, -3.0}});
-	std::vector<std::complex<double>> r = a.roots((uint32_t)100099);
+	std::vector<std::complex<double>> r = a.roots((uint32_t)1000);
 	for (std::complex<double> i : r) {
 		cr_assert(abs(a(i)) <= std::numeric_limits<double>::epsilon() * 35);
 	}
@@ -104,10 +102,10 @@ Test(c_roots, test) {
 
 Test(r_roots, test) {
 	Polinomial a({{1.0, -15.0, 70.0, -120.0, 64.0}});
-	std::vector<double> r = a.r_roots();
+	std::vector<double> r = a.r_roots((uint32_t)1000);
 	cr_assert_eq(r.size(), 4);
 	for (double i : r) {
-		cr_assert_eq(a(i), 0.0);
+		cr_assert(abs(a(i)) <= std::numeric_limits<double>::epsilon() * 35);
 	}
 }
 

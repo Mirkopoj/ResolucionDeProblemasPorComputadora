@@ -1,5 +1,4 @@
 #include "../Include/polinomials.hpp"
-#include <array>
 #include <cmath>
 #include <complex>
 #include <criterion/hooks.h>
@@ -305,7 +304,7 @@ Polinomial Polinomial::derivate() const {
 			.m_order = i.m_order-1,
 			.m_coeficient = i.m_coeficient * i.m_order,
 		};
-		ret+=n;
+		if (n.m_order >= 0) ret+=n;
 	}
 	ret.m_terms.shrink_to_fit();
 	return ret;
