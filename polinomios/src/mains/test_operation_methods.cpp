@@ -16,6 +16,13 @@ Test(add_operand, test) {
 	cr_assert_eq(c, r);
 }
 
+Test(add_operand_zero, test) {
+	Polinomial a({{4.0, 3.0, 2.0, 0.0, 0.0}});
+	Polinomial b;
+	Polinomial c = a+b;
+	cr_assert_eq(c, a);
+}
+
 Test(equal_operand_true, test) {
 	Polinomial a({{3.0, 2.0, 1.0, 0.0}});
 	Polinomial b({{3,3.0},{2,2.0},{1,1.0},{0,0.0}});

@@ -34,7 +34,7 @@ Polinomial Polinomial::m_add(const Polinomial b) const {
 	Polinomial res = b;
 	for (term i : m_terms) {
 		vec_term t = res.get_term(i.m_order);
-		if (t.m_pos > res.m_terms.size()-1) {res.m_terms.push_back({i.m_order,0});}
+		if (t.m_pos == res.m_terms.size()) {res.m_terms.push_back({i.m_order,0});}
 		res.m_terms[t.m_pos].m_coeficient = t.m_coeficient + i.m_coeficient;
 	}
 	res.sort();

@@ -29,7 +29,7 @@ int main (int argc, char *argv[]) {
 	Spline spline_0_4(knots, 0.4);
 	Spline spline_0_6(knots, 0.6);
 	Spline spline_0_8(knots, 0.8);
-	Spline spline_1_0(knots, 0.99999999999999);
+	Spline spline_1_0(knots, 0.1);
 	std::vector<double> puntos_0_0;
 	std::vector<double> puntos_0_2;
 	std::vector<double> puntos_0_4;
