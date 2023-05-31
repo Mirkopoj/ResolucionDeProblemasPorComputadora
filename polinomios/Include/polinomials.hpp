@@ -73,6 +73,7 @@ public:
 	bool operator==(const Polinomial&) const;
 
 	friend std::ostream &operator<<(std::ostream &out, const Polinomial &p);
+	friend std::istream &operator>>(std::istream &in, Polinomial &p);
 
 	Polinomial operator*() const;
 
@@ -84,6 +85,8 @@ public:
 	std::vector<double> r_roots(uint32_t) const;
 
 	uint32_t degree() const;
+	
+	std::ostream &pprint(std::ostream&, char) const;
 
 private:
 

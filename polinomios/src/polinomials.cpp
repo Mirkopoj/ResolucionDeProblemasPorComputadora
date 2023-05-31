@@ -11,6 +11,7 @@
 #include <tuple>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 Polinomial::Polinomial(std::vector<term> t){ 
 	vec_init(t);
@@ -124,12 +125,40 @@ Polinomial::vec_term Polinomial::get_term(int order) const {
 	return {index, 0};
 }
 
-std::ostream &operator<<(std::ostream &out, const Polinomial &p){
-	for (Polinomial::term i : p.m_terms) {
-		out << i.m_coeficient << "X^" << i.m_order << " + ";
+std::ostream &Polinomial::pprint(std::ostream &out, char var) const {
+	for (Polinomial::term i : m_terms) {
+		out << i.m_coeficient << var << "^" << i.m_order << " + ";
 	}
 	out << "0";
 	return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const Polinomial &p){
+	if (out.rdbuf() == std::cout.rdbuf() ||
+		 out.rdbuf() == std::cerr.rdbuf()
+	){
+		p.pprint(out, 'X');
+		return out;
+	}
+	for (Polinomial::term i : p.m_terms) {
+		out << i.m_coeficient << i.m_order;
+	}
+	return out;
+}
+
+std::istream &operator>>(std::istream &in, Polinomial &p){
+	p = Polinomial();
+	while (!in.eof()) {
+		double cof;
+		int ord;
+		in >> cof;
+		in >> ord;
+		Polinomial::term aux = {
+			.m_order = ord,
+			.m_coeficient = cof,
+		};
+	}
+	return in;
 }
 
 void Polinomial::vec_init(std::vector<term> t){
