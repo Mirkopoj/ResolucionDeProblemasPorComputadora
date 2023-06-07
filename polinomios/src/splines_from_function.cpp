@@ -50,6 +50,7 @@ double SplineFromFunction::b_(int k) const {
 		(m_knots[k+1].m_x-m_knots[k].m_x);
 }
 
+//Read gen_spline_section.pdf, under doc/
 Polinomial SplineFromFunction::gen_spline_section(int k) const {
 	double x1 = m_knots[k].m_x;
 	double x2 = m_knots[k+1].m_x;
