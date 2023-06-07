@@ -12,6 +12,9 @@ void print_help(char * name){
 	std::cout<< "You must provide an expresion, exp. %s 3+2*x^2\n";
 	std::cout<< "Variable should be x";
 	std::cout<< "Usage: " << name << "[options] <expresion>\n";
+	std::cout<< "-b <begining>\n";
+	std::cout<< "-e <end>\n";
+	std::cout<< "-s <steps>" << std::endl;
 	exit(-1);
 }
 
