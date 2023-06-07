@@ -2,11 +2,10 @@
 #include <ginac/parser.h>
 #include <iostream>
 #include <vector>
-#define WITHOUT_NUMPY
-#include <matplotlibcpp.h>
+#include <matplot/matplot.h>
 #include "../../Include/splines_from_function.hpp"
 
-namespace plt = matplotlibcpp;
+namespace plt = matplot;
 
 void print_help(char * name){
 	std::cout<< "You must provide an expresion, exp. %s 3+2*x^2\n";

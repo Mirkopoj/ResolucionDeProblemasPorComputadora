@@ -1,10 +1,9 @@
 #include <vector>
-#define WITHOUT_NUMPY
-#include <matplotlibcpp.h>
 #include "../../Include/splines_from_function.hpp"
 #include <iostream>
+#include <matplot/matplot.h>
 
-namespace plt = matplotlibcpp;
+namespace plt = matplot;
 
 int main (int argc, char *argv[]) {
 	GiNaC::symbol x;

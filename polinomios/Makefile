@@ -1,6 +1,6 @@
 CC = g++
-LDFLAGS = -lm
-CFLAGS = -O -std=c++20 -I/usr/include/python3.11 -lcriterion -lpython3.11 -lginac
+LDFLAGS = -lm -lcriterion -lginac -lmatplot
+CFLAGS = -O -std=c++20 
 ifeq ($(DEBUG),1)
 	CFLAGS += -g3
 endif

@@ -1,10 +1,9 @@
 #include <vector>
-#define WITHOUT_NUMPY
-#include <matplotlibcpp.h>
 #include "../../Include/splines.hpp"
 #include <iostream>
+#include <matplot/matplot.h>
 
-namespace plt = matplotlibcpp;
+namespace plt = matplot;
 
 int main (int argc, char *argv[]) {
 	std::vector<knot> knots = {
@@ -29,19 +28,21 @@ int main (int argc, char *argv[]) {
 	Spline spline_0_4(knots, 0.4);
 	Spline spline_0_6(knots, 0.6);
 	Spline spline_0_8(knots, 0.8);
-	Spline spline_1_0(knots, 0.1);
+	Spline spline_1_0(knots, 1.0);
 	std::vector<double> puntos_0_0;
 	std::vector<double> puntos_0_2;
 	std::vector<double> puntos_0_4;
 	std::vector<double> puntos_0_6;
 	std::vector<double> puntos_0_8;
 	std::vector<double> puntos_1_0;
+	std::vector<double> eje;
 	puntos_0_0.reserve(128);
 	puntos_0_2.reserve(128);
 	puntos_0_4.reserve(128);
 	puntos_0_6.reserve(128);
 	puntos_0_8.reserve(128);
 	puntos_1_0.reserve(128);
+	eje.reserve(128);
 	for (double i = 1.1; i<12.9; i+=0.1) {
 		puntos_0_0.push_back(spline_0_0(i));
 		puntos_0_2.push_back(spline_0_2(i));
@@ -49,14 +50,16 @@ int main (int argc, char *argv[]) {
 		puntos_0_6.push_back(spline_0_6(i));
 		puntos_0_8.push_back(spline_0_8(i));
 		puntos_1_0.push_back(spline_1_0(i));
+		eje.push_back(i);
 	}
-	plt::plot(puntos_0_0, {{"label", "0.0"}});
-	plt::plot(puntos_0_2, {{"label", "0.2"}});
-	plt::plot(puntos_0_4, {{"label", "0.4"}});
-	plt::plot(puntos_0_6, {{"label", "0.6"}});
-	plt::plot(puntos_0_8, {{"label", "0.8"}});
-	plt::plot(puntos_1_0, {{"label", "1.0"}});
-	plt::legend();
+	plt::hold(plt::on);
+	plt::plot(eje, puntos_0_0);
+	plt::plot(eje, puntos_0_2);
+	plt::plot(eje, puntos_0_4);
+	plt::plot(eje, puntos_0_6);
+	plt::plot(eje, puntos_0_8);
+	plt::plot(eje, puntos_1_0);
+	plt::legend({"0.0", "0.2", "0.4", "0.6", "0.8", "1.0"});
 	plt::show();
 	return 0;
 }
