@@ -1,0 +1,361 @@
+\documentclass[12pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}             
+\usepackage{geometry}                         
+\geometry{left=5mm,right=5mm,top=5mm,bottom=5mm}
+\usepackage{ucs}
+\usepackage{amsmath}      
+\usepackage{amsfonts}    
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[lofdepth,lotdepth]{subfig}	
+\usepackage{unitsdef}
+\usepackage{float}		
+\usepackage{color}
+\batchmode
+\usepackage{rotating}
+\usepackage{lscape}
+\pagenumbering{gobble}
+
+\begin{document}	
+\begin{landscape}	
+
+\begin{equation*}
+	q(x)=
+	(1-t(x))y_1+
+	t(x)y_2+
+	t(x)(1-t(x))((1-t(x))a+t(x)b)
+\end{equation*}
+
+\begin{equation*}
+	t(x)=
+	\frac{
+		x-x_1
+	}{
+		x_2-x_1
+	}
+\end{equation*}
+
+\begin{equation*}
+	a=
+	K_1(x_2-x_1)- 
+	(y_2-y_1)
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	(1-
+		(
+			\frac{
+				x
+			}{
+				x_2-x_1
+			}-
+			\frac{
+				x_1
+			}{
+				x_2-x_1
+			}
+		)
+	)y_1+
+	(
+		\frac{
+			x
+		}{
+			x_2-x_1
+		}-
+		\frac{
+			x_1
+		}{
+			x_2-x_1
+		}
+	)
+	y_2+
+	(
+		\frac{
+			x
+		}{
+			x_2-x_1
+		}-
+		\frac{
+			x_1
+		}{
+			x_2-x_1
+		}
+	)
+	(1-
+		(
+			\frac{
+				x
+			}{
+				x_2-x_1
+			}-
+			\frac{
+				x_1
+			}{
+				x_2-x_1
+			}
+		)
+	)(
+		(1-
+			(
+				\frac{
+					x
+				}{
+					x_2-x_1
+				}-
+				\frac{
+					x_1
+				}{
+					x_2-x_1
+				}
+			)
+		)a+
+		(
+			\frac{
+				x
+			}{
+				x_2-x_1
+			}-
+			\frac{
+				x_1
+			}{
+				x_2-x_1
+			}
+		)
+		b
+	)
+\end{equation*}
+
+\begin{equation*}
+	x'=
+	\frac{
+		x
+	}{
+		x_2-x_1
+	}
+\end{equation*}
+
+\begin{equation*}
+	\hat{x}_1=
+	\frac{
+		x_1
+	}{
+		x_2-x_1
+	}
+\end{equation*}
+
+\begin{equation*}
+	\hat{x}_2=
+	1+\hat{x}_1
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	(
+		\hat{x}_2- 
+		x'
+	)y_1+
+	(
+		x'- 
+		\hat{x}_1
+	)
+	y_2+
+	(
+		x'- 
+		\hat{x}_1
+	)
+	(
+		\hat{x}_2- 
+		x'
+	)
+	(
+		(
+			\hat{x}_2-
+			x'
+		)
+		a+
+		(
+			x'- 
+			\hat{x}_1
+		)
+		b
+	)
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	\hat{x}_2
+	y_1- 
+	x'
+	y_1+
+	x'
+	y_2- 
+	\hat{x}_1
+	y_2+
+	(
+		x'\hat{x}_2
+		- 
+		\hat{x}_1\hat{x}_2
+		-
+		x'^2
+		+ 
+		\hat{x}_1x'
+	)
+	(
+		(
+			\hat{x}_2a-
+			x'a
+		)
+		+
+		(
+			x'b- 
+			\hat{x}_1b
+		)
+	)
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	\hat{x}_2
+	y_1
+	- \hat{x}_1
+	y_2
+	-x'
+	y_1
+	+x'
+	y_2
+	+(
+		x'(\hat{x}_2+\hat{x}_1)
+		- 
+		\hat{x}_1\hat{x}_2
+		-
+		x'^2
+	)
+	(
+		\hat{x}_2a
+		-\hat{x}_1b
+		+x'(b-a)
+	)
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	\hat{x}_2
+	y_1
+	- \hat{x}_1
+	y_2
+	-x'
+	y_1
+	+x'
+	y_2
+	+x'(\hat{x}_2+\hat{x}_1)\hat{x}_2a
+	-\hat{x}_1\hat{x}_2^2a
+	-x'^2\hat{x}_2a
+	-x'(\hat{x}_2+\hat{x}_1)\hat{x}_1b
+	+\hat{x}_1^2\hat{x}_2b
+	+x'^2\hat{x}_1b
+	+x'^2(\hat{x}_2+\hat{x}_1)(b-a)
+	-\hat{x}_1\hat{x}_2x'(b-a)
+	-x'^3(b-a)
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	\hat{x}_2y_1
+	-\hat{x}_1y_2
+	-\hat{x}_1\hat{x}_2^2a
+	+\hat{x}_1^2\hat{x}_2b
+	-y_1x'
+	+y_2x'
+	+(\hat{x}_2+\hat{x}_1)\hat{x}_2ax'
+	-(\hat{x}_2+\hat{x}_1)\hat{x}_1bx'
+	-\hat{x}_1\hat{x}_2(b-a)x'
+	+\hat{x}_1bx'^2
+	-\hat{x}_2ax'^2
+	+(\hat{x}_2+\hat{x}_1)(b-a)x'^2
+	-(b-a)x'^3
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	[
+		\hat{x}_2y_1
+		-\hat{x}_1y_2
+		-\hat{x}_1\hat{x}_2^2a
+		+\hat{x}_1^2\hat{x}_2b
+	]
+	+[
+		-y_1
+		+y_2
+		+(\hat{x}_2+\hat{x}_1)\hat{x}_2a
+		-(\hat{x}_2+\hat{x}_1)\hat{x}_1b
+		-\hat{x}_1\hat{x}_2(b-a)
+	]x'
+	+[
+		\hat{x}_1b
+		-\hat{x}_2a
+		+(\hat{x}_2+\hat{x}_1)(b-a)
+	]x'^2
+	+[-(b-a)]x'^3
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	[
+		\hat{x}_2y_1
+		-\hat{x}_1y_2
+		-\hat{x}_1\hat{x}_2^2a
+		+\hat{x}_1^2\hat{x}_2b
+	]
+	+[
+		-y_1
+		+y_2
+		+(\hat{x}_2+\hat{x}_1)(\hat{x}_2a-\hat{x}_1b)
+		-\hat{x}_1\hat{x}_2(b-a)
+	]x'
+	+[
+		\hat{x}_1b
+		-\hat{x}_2a
+		+(\hat{x}_2+\hat{x}_1)(b-a)
+	]x'^2
+	+[a-b]x'^3
+\end{equation*}
+
+\begin{equation*}
+	q(x)=
+	[
+		\hat{x}_2y_1
+		-\hat{x}_1y_2
+		-\hat{x}_1\hat{x}_2^2a
+		+\hat{x}_1^2\hat{x}_2b
+	]
+	+[
+		\frac{
+			-y_1
+			+y_2
+			+(\hat{x}_2+\hat{x}_1)(\hat{x}_2a-\hat{x}_1b)
+			-\hat{x}_1\hat{x}_2(b-a)
+		}{
+			x_2-x_1
+		}
+	]x
+	+[
+		\frac{
+			\hat{x}_1b
+			-\hat{x}_2a
+			+(\hat{x}_2+\hat{x}_1)(b-a)
+		}{
+			(x_2-x_1)^2
+		}
+	]x^2
+	+[
+		\frac{
+			a-b
+		}{
+			(x_2-x_1)^3
+		}
+	]x^3
+\end{equation*}
+
+\end{landscape}	
+\end{document}
