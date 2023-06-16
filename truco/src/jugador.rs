@@ -1,17 +1,18 @@
 use crate::carta::Carta;
-use std::cmp::Ordering;
 use itertools::Itertools;
+use std::{cmp::Ordering, fmt::Display};
 
 use crate::Mesa;
 
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Jugador {
-    pub(super)mano: [Option<Carta>; 3],
-    pub(super)posicion: usize,
+    pub(super) mano: [Option<Carta>; 3],
+    pub(super) posicion: usize,
 }
 
-#[derive(Debug, Eq)] #[allow(dead_code)]
+#[derive(Debug, Eq)]
+#[allow(dead_code)]
 struct Envido {
     tantos: u8,
     valor_revelado: u8,
@@ -36,12 +37,16 @@ impl PartialEq for Envido {
 }
 
 impl Jugador {
-
     #[allow(unused)]
     fn calcular_envido(&self) -> Vec<Envido> {
         let mut ret = Vec::new();
-        let mano: Vec<Carta> = self.mano.iter().filter(|c| c.is_some()).map(|c| c.unwrap()).collect();
-        let e: Result<(),()> = Ok(());
+        let mano: Vec<Carta> = self
+            .mano
+            .iter()
+            .filter(|c| c.is_some())
+            .map(|c| c.unwrap())
+            .collect();
+        let e: Result<(), ()> = Ok(());
         for carta in &mano {
             ret.push(Envido {
                 tantos: carta.valor_tantos,
@@ -75,7 +80,7 @@ impl Jugador {
         mesa.cartas[self.posicion][index] = self.mano[carta].take();
     }
 
-    pub fn turno(&mut self, mesa: &mut Mesa){
+    pub fn turno(&mut self, mesa: &mut Mesa) {
         for i in 0..3 {
             if self.mano[i].is_some() {
                 self.tirar(i, mesa);
@@ -83,7 +88,16 @@ impl Jugador {
             }
         }
     }
-
-            
 }
 
+impl Display for Jugador {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for carta in self.mano {
+            match carta {
+                Some(c) => write!(f, " {}", c),
+                None => write!(f, "    "),
+            }?;
+        }
+        writeln!(f, "")
+    }
+}

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use enum_iterator::Sequence;
 
 #[derive(Sequence, Debug, Clone, Copy, PartialEq)]
@@ -25,7 +27,7 @@ pub enum Numero {
 #[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
 pub struct Carta {
-    pub(super)palo: Palo,
+    pub(super) palo: Palo,
     numero: Numero,
     pub valor_tantos: u8,
     pub valor_juego: u8,
@@ -72,6 +74,29 @@ impl Carta {
             numero,
             valor_juego: valor,
             valor_tantos: tantos,
+        }
+    }
+}
+
+impl Display for Carta {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.numero {
+            Numero::Ancho => write!(f, " 1"),
+            Numero::Dos => write!(f, " 2"),
+            Numero::Tres => write!(f, " 3"),
+            Numero::Cuatro => write!(f, " 4"),
+            Numero::Cinco => write!(f, " 5"),
+            Numero::Seis => write!(f, " 6"),
+            Numero::Siete => write!(f, " 7"),
+            Numero::Sota => write!(f, "10"),
+            Numero::Caballo => write!(f, "11"),
+            Numero::Rey => write!(f, "12"),
+        }?;
+        match self.palo {
+            Palo::Espada => write!(f, "E"),
+            Palo::Basto => write!(f, "B"),
+            Palo::Copa => write!(f, "C"),
+            Palo::Oro => write!(f, "O"),
         }
     }
 }
