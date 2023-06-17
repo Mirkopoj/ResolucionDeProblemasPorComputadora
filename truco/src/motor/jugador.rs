@@ -1,8 +1,8 @@
-use crate::carta::Carta;
 use itertools::Itertools;
 use std::{cmp::Ordering, fmt::Display};
 
-use crate::Mesa;
+use crate::motor::carta::Carta;
+use crate::motor::mesa::Mesa;
 
 #[derive(Debug)]
 #[allow(dead_code)]

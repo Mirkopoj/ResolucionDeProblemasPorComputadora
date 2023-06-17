@@ -1,5 +1,4 @@
 use std::fmt::Display;
-
 use enum_iterator::Sequence;
 
 #[derive(Sequence, Debug, Clone, Copy, PartialEq)]

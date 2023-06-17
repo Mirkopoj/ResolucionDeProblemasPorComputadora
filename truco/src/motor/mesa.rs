@@ -1,6 +1,7 @@
-use crate::Carta;
 use colored::Colorize;
 use std::fmt::Display;
+
+use crate::motor::carta::Carta;
 
 #[derive(Debug)]
 pub struct Mesa {
@@ -53,6 +54,7 @@ impl Mesa {
             .map(|(_, valor)| valor)
             .unwrap();
         let max_index = valores_jugados
+            .rev()
             .max_by_key(|(_, valor)| *valor)
             .map(|(indice, _)| indice)
             .unwrap();
@@ -101,6 +103,9 @@ impl Mesa {
         if self.rondas[1].is_some() {
             return self.rondas[1];
         }
+        if self.rondas.len() < 3 {
+            return None;
+        }
         if self.rondas[2].is_some() {
             return self.rondas[2];
         }
@@ -113,6 +118,12 @@ impl Mesa {
         self.cuenta_vueltas += 1;
         self.posicion_de_mano = self.cuenta_vueltas%self.numero_de_jugadores;
         self.cartas = (0..self.numero_de_jugadores).map(|_| [None; 3]).collect();
+    }
+
+    pub fn indices_de_turnos(&self) -> Vec<usize> {
+        (self.posicion_de_mano..self.posicion_de_mano+self.numero_de_jugadores)
+            .map(|i| i%self.numero_de_jugadores)
+            .collect()
     }
 }
 
