@@ -1,9 +1,10 @@
+use itertools::enumerate;
 use enum_iterator::all;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
+use crate::decision_maker::Decider;
 use crate::motor::carta::{Carta, Numero, Palo};
-use crate::motor::mesa::Mesa;
 use crate::motor::jugador::Jugador;
 
 pub struct Mazo {
@@ -25,16 +26,14 @@ impl Mazo {
         self.cartas.shuffle(&mut rng);
     }
 
-    pub fn repartir(&self, mesa: &Mesa) -> Vec<Jugador> {
-        (0..mesa.numero_de_jugadores)
-            .map(|numero_de_jugador| Jugador {
-                mano: [
+    pub fn repartir<T: Decider>(&self, jugadores: &mut Vec<Jugador<T>>) {
+        let numero_de_jugadores = jugadores.len();
+        for (numero_de_jugador, mut jugador) in enumerate(jugadores) {
+            jugador.mano =  [
                     Some(self.cartas[numero_de_jugador]),
-                    Some(self.cartas[numero_de_jugador + mesa.numero_de_jugadores]),
-                    Some(self.cartas[numero_de_jugador + mesa.numero_de_jugadores * 2]),
-                ],
-                posicion: numero_de_jugador,
-            })
-            .collect()
+                    Some(self.cartas[numero_de_jugador + numero_de_jugadores]),
+                    Some(self.cartas[numero_de_jugador + numero_de_jugadores * 2]),
+                ];
+        }
     }
 }

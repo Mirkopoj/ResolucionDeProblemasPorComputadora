@@ -3,12 +3,14 @@ use std::{cmp::Ordering, fmt::Display};
 
 use crate::motor::carta::Carta;
 use crate::motor::mesa::Mesa;
+use crate::decision_maker::{Decider, Decision};
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub struct Jugador {
-    pub(super) mano: [Option<Carta>; 3],
-    pub(super) posicion: usize,
+pub struct Jugador<DecisionMaker: Decider + ?Sized>{
+    pub(crate) mano: [Option<Carta>; 3],
+    pub(crate) posicion: usize,
+    decision_maker: DecisionMaker,
 }
 
 #[derive(Debug, Eq)]
@@ -36,7 +38,12 @@ impl PartialEq for Envido {
     }
 }
 
-impl Jugador {
+impl <DecisionMaker: Decider> Jugador<DecisionMaker> {
+
+    pub fn new(decision_maker: DecisionMaker, posicion: usize) -> Jugador<DecisionMaker>{
+        Jugador { mano: [None, None, None], posicion, decision_maker }
+    }
+
     #[allow(unused)]
     fn calcular_envido(&self) -> Vec<Envido> {
         let mut ret = Vec::new();
@@ -72,7 +79,7 @@ impl Jugador {
         ret
     }
 
-    fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
+    pub(crate) fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
         let index = match mesa.cartas[self.posicion].iter().position(|c| c.is_none()) {
             Some(i) => i,
             None => return,
@@ -81,16 +88,19 @@ impl Jugador {
     }
 
     pub fn turno(&mut self, mesa: &mut Mesa) {
-        for i in 0..3 {
-            if self.mano[i].is_some() {
-                self.tirar(i, mesa);
-                break;
+        loop {
+            match self.decision_maker.decide(self, mesa) {
+                Decision::Tirar(carta) => {
+                    self.tirar(carta, mesa);
+                    break;
+                },
+                Decision::Mazo => break,
             }
         }
     }
 }
 
-impl Display for Jugador {
+impl <DecisionMaker: Decider> Display for Jugador<DecisionMaker> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for carta in self.mano {
             match carta {
