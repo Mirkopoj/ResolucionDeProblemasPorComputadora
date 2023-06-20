@@ -26,10 +26,10 @@ impl Mazo {
         self.cartas.shuffle(&mut rng);
     }
 
-    pub fn repartir<T: Decider>(&self, jugadores: &mut Vec<Jugador<T>>) {
+    pub fn repartir<T: Decider + ?Sized>(&self, jugadores: &mut Vec<Jugador<T>>) {
         let numero_de_jugadores = jugadores.len();
         for (numero_de_jugador, mut jugador) in enumerate(jugadores) {
-            jugador.mano =  [
+            jugador.avatar.mano =  [
                     Some(self.cartas[numero_de_jugador]),
                     Some(self.cartas[numero_de_jugador + numero_de_jugadores]),
                     Some(self.cartas[numero_de_jugador + numero_de_jugadores * 2]),

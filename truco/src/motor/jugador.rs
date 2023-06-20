@@ -8,9 +8,14 @@ use crate::decision_maker::{Decider, Decision};
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Jugador<DecisionMaker: Decider + ?Sized>{
+    pub(crate) avatar: Avatar,
+    decision_maker: Box<DecisionMaker>,
+}
+
+#[derive(Debug)]
+pub struct Avatar {
     pub(crate) mano: [Option<Carta>; 3],
     pub(crate) posicion: usize,
-    decision_maker: DecisionMaker,
 }
 
 #[derive(Debug, Eq)]
@@ -38,16 +43,17 @@ impl PartialEq for Envido {
     }
 }
 
-impl <DecisionMaker: Decider> Jugador<DecisionMaker> {
+impl <DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
 
-    pub fn new(decision_maker: DecisionMaker, posicion: usize) -> Jugador<DecisionMaker>{
-        Jugador { mano: [None, None, None], posicion, decision_maker }
+    pub fn new(decision_maker: Box<DecisionMaker>, posicion: usize) -> Jugador<DecisionMaker>{
+        Jugador { avatar: Avatar{ mano: [None, None, None], posicion }, decision_maker }
     }
 
     #[allow(unused)]
     fn calcular_envido(&self) -> Vec<Envido> {
         let mut ret = Vec::new();
         let mano: Vec<Carta> = self
+            .avatar
             .mano
             .iter()
             .filter(|c| c.is_some())
@@ -80,16 +86,16 @@ impl <DecisionMaker: Decider> Jugador<DecisionMaker> {
     }
 
     pub(crate) fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
-        let index = match mesa.cartas[self.posicion].iter().position(|c| c.is_none()) {
+        let index = match mesa.cartas[self.avatar.posicion].iter().position(|c| c.is_none()) {
             Some(i) => i,
             None => return,
         };
-        mesa.cartas[self.posicion][index] = self.mano[carta].take();
+        mesa.cartas[self.avatar.posicion][index] = self.avatar.mano[carta].take();
     }
 
     pub fn turno(&mut self, mesa: &mut Mesa) {
         loop {
-            match self.decision_maker.decide(self, mesa) {
+            match self.decision_maker.decide(&self.avatar, mesa) {
                 Decision::Tirar(carta) => {
                     self.tirar(carta, mesa);
                     break;
@@ -102,7 +108,7 @@ impl <DecisionMaker: Decider> Jugador<DecisionMaker> {
 
 impl <DecisionMaker: Decider> Display for Jugador<DecisionMaker> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for carta in self.mano {
+        for carta in self.avatar.mano {
             match carta {
                 Some(c) => write!(f, " {}", c),
                 None => write!(f, "    "),

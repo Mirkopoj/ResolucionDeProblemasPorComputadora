@@ -1,3 +1,2 @@
 #[derive(Debug)]
-pub struct HumanDecider {
-}
+pub struct HumanDecider;
