@@ -1,6 +1,6 @@
 pub mod dumb_decider;
 pub mod minimax_decider;
-mod human_decider;
+pub mod human_decider;
 
 use crate::motor::jugador::Avatar;
 use crate::motor::mesa::Mesa;

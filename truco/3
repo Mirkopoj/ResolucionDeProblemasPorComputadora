@@ -3,7 +3,6 @@ use crate::motor::jugador::Avatar;
 use crate::motor::mesa::Mesa;
 use r3bl_rs_utils::Arena;
 use std::collections::VecDeque;
-use std::ops::Range;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -56,41 +55,15 @@ impl Decider for MinimaxDecider {
 
 }
 
-const VALORES_LOOKUP: [u8;15] = [ 0, 4, 4, 4, 2, 4, 4, 4, 2, 4, 4, 1, 1, 1, 1 ];
+const Valores_LookUp: [u8;15] = [ 0, 4, 4, 4, 2, 4, 4, 4, 2, 4, 4, 1, 1, 1, 1 ];
 
-fn combinations(n: usize, r: usize) -> usize {
-    (n - r + 1..=n).product::<usize>() / (1..=r).product::<usize>()
+fn probabilidad_que_mate(a: u8, dado:&[u8]) -> f32 {
+    if let Some(le_ganan) = Valores_LookUp[a as usize..].iter().fold(0, |acc, x| acc + x);
+        let total = (39-dado.len()) as f32;
+        return le_ganan as f32/total;
+    }
+    0.0
 }
-
-fn probabilidad(a: u8, dado:&[u8], le_quedan: usize, me_importan: Range<usize>) -> f32 {
-    let mut conocidas = vec![0; 15]; 
-    for &i in dado { conocidas[i as usize] += 1; }
-    let desconocidas: Vec<_> = VALORES_LOOKUP.iter().zip(conocidas.iter()).map(|(&x, &y)| x - y).collect();
-    let me_importan = desconocidas[me_importan].iter().fold(0, |acc, x| acc + x) as usize;
-    let total = 40-dado.len()-le_quedan;
-    1.0-(combinations(total-me_importan, le_quedan)/combinations(total, le_quedan)) as f32
-}
-
-fn probabilidad_que_me_gane(a: u8, dado:&[u8], le_quedan: usize) -> f32 {
-    probabilidad(a, dado, le_quedan, (a+1) as usize..15)
-}
-
-fn probabilidad_que_me_emparde(a: u8, dado:&[u8], le_quedan: usize) -> f32 {
-    probabilidad(a, dado, le_quedan, a as usize..(a+1) as usize)
-}
-
-fn probabilidad_que_pierda(a: u8, dado:&[u8], le_quedan: usize) -> f32 {
-    probabilidad(a, dado, le_quedan, 0..a as usize)
-}
-
-fn tirar(avatar: &mut Avatar, carta: usize, mesa: &mut Mesa) {
-    let index = match mesa.cartas[avatar.posicion].iter().position(|c| c.is_none()) {
-        Some(i) => i,
-        None => return,
-    };
-    mesa.cartas[avatar.posicion][index] = avatar.mano[carta].take();
-}
-
 
 #[allow(dead_code)]
 impl MinimaxDecider {
@@ -108,79 +81,6 @@ impl MinimaxDecider {
         llenar_mano(&mut desicion_tree, &[0,1,2], root, 0, true, Primera::Pardas);
 
         MinimaxDecider { desicion_tree }
-    }
-
-    fn actualizar_probabilidades(&self, avatar: Avatar, mesa: Mesa, parent_id: usize, le_quedan: usize){
-        if let Some(childs) = self.desicion_tree.get_children_of(parent_id) {
-            for child in childs {
-                let mut le_quedan = le_quedan;
-                let mut avatar = avatar;
-                let mut mesa = mesa.clone();
-                if let Some(node_arc) = self.desicion_tree.get_node_arc(child) {
-                    let node = node_arc.read().unwrap();
-                    match node.payload.desicion {
-                        BayesianDecision::Propia(desicion) => {
-                            match desicion {
-                                Decision::Tirar(carta) => {
-                                    tirar(&mut avatar, carta, &mut mesa);
-                                },
-                                Decision::Mazo => {},
-                            }
-                        },
-                        BayesianDecision::Rival(desicion) => {
-                            if let Some(propia_previa) = self.desicion_tree.get_node_arc(parent_id) {
-                                let propia_previa = propia_previa.read().unwrap();
-                                let propia_previa = match propia_previa.payload.desicion {
-                                    BayesianDecision::Propia(desicion) => {
-                                        match desicion {
-                                            Decision::Tirar(n) => {avatar.mano[n]},
-                                            _ => None,
-                                        }
-                                    },
-                                    _ => None,
-                                };
-                                let mut cartas_vistas = Vec::new();
-                                for carta in avatar.mano {
-                                    if let Some (carta) = carta {
-                                        cartas_vistas.push(carta.valor_juego);
-                                    }
-                                }
-                                for mano in &mesa.cartas {
-                                    for carta in mano {
-                                        if let Some (carta) = carta {
-                                            cartas_vistas.push(carta.valor_juego);
-                                        }
-                                    }
-                                }
-
-                                let propia_previa = match propia_previa {
-                                    Some(carta) => carta.valor_juego,
-                                    None => 0,
-                                };
-                                match desicion {
-                                    AbtractDecision::Matar(_) => {
-                                        let new_prob = probabilidad_que_me_gane(propia_previa, &cartas_vistas, le_quedan);
-                                        node_arc.write().unwrap().payload.desicion = BayesianDecision::Rival(AbtractDecision::Matar(new_prob));
-                                    },
-                                    AbtractDecision::Pardar(_) => {
-                                        let new_prob = probabilidad_que_me_emparde(propia_previa, &cartas_vistas, le_quedan);
-                                        node_arc.write().unwrap().payload.desicion = BayesianDecision::Rival(AbtractDecision::Pardar(new_prob));
-                                    },
-                                    AbtractDecision::Pasar(_) => {
-                                        let new_prob = probabilidad_que_pierda(propia_previa, &cartas_vistas, le_quedan);
-                                        node_arc.write().unwrap().payload.desicion = BayesianDecision::Rival(AbtractDecision::Pasar(new_prob));
-                                    },
-                                }
-                                le_quedan -= 1;
-                            }
-                        },
-                        BayesianDecision::Final(_, probabilidad) => {},
-                        BayesianDecision::Inicio => {},
-                    }
-                }
-                self.actualizar_probabilidades(avatar, mesa, child, le_quedan);
-            }
-        }
     }
 }
 

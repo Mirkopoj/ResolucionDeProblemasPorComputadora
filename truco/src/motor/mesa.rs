@@ -3,10 +3,10 @@ use std::fmt::Display;
 
 use crate::motor::carta::Carta;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Mesa {
     pub(super) numero_de_jugadores: usize,
-    pub(super) cartas: Vec<[Option<Carta>; 3]>,
+    pub cartas: Vec<[Option<Carta>; 3]>,
     pub(super) rondas: Vec<Option<Equipo>>,
     ronda_en_juego: usize,
     pub(super) posicion_de_mano: usize,

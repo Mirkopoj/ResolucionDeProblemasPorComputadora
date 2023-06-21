@@ -12,7 +12,7 @@ pub struct Jugador<DecisionMaker: Decider + ?Sized>{
     decision_maker: Box<DecisionMaker>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Avatar {
     pub(crate) mano: [Option<Carta>; 3],
     pub(crate) posicion: usize,
@@ -108,7 +108,13 @@ impl <DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
 
 impl <DecisionMaker: Decider> Display for Jugador<DecisionMaker> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for carta in self.avatar.mano {
+        writeln!(f, "{}", self.avatar)
+    }
+}
+
+impl Display for Avatar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for carta in self.mano {
             match carta {
                 Some(c) => write!(f, " {}", c),
                 None => write!(f, "    "),
