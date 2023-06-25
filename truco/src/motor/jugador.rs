@@ -1,13 +1,13 @@
 use itertools::Itertools;
 use std::{cmp::Ordering, fmt::Display};
 
+use crate::decision_maker::{Decider, Decision};
 use crate::motor::carta::Carta;
 use crate::motor::mesa::Mesa;
-use crate::decision_maker::{Decider, Decision};
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub struct Jugador<DecisionMaker: Decider + ?Sized>{
+pub struct Jugador<DecisionMaker: Decider + ?Sized> {
     pub(crate) avatar: Avatar,
     decision_maker: Box<DecisionMaker>,
 }
@@ -43,10 +43,15 @@ impl PartialEq for Envido {
     }
 }
 
-impl <DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
-
-    pub fn new(decision_maker: Box<DecisionMaker>, posicion: usize) -> Jugador<DecisionMaker>{
-        Jugador { avatar: Avatar{ mano: [None, None, None], posicion }, decision_maker }
+impl<DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
+    pub fn new(decision_maker: Box<DecisionMaker>, posicion: usize) -> Jugador<DecisionMaker> {
+        Jugador {
+            avatar: Avatar {
+                mano: [None, None, None],
+                posicion,
+            },
+            decision_maker,
+        }
     }
 
     #[allow(unused)]
@@ -86,7 +91,10 @@ impl <DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
     }
 
     pub(crate) fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
-        let index = match mesa.cartas[self.avatar.posicion].iter().position(|c| c.is_none()) {
+        let index = match mesa.cartas[self.avatar.posicion]
+            .iter()
+            .position(|c| c.is_none())
+        {
             Some(i) => i,
             None => return,
         };
@@ -99,14 +107,14 @@ impl <DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
                 Decision::Tirar(carta) => {
                     self.tirar(carta, mesa);
                     break;
-                },
+                }
                 Decision::Mazo => break,
             }
         }
     }
 }
 
-impl <DecisionMaker: Decider> Display for Jugador<DecisionMaker> {
+impl<DecisionMaker: Decider> Display for Jugador<DecisionMaker> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.avatar)
     }

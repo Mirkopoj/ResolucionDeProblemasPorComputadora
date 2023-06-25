@@ -8,14 +8,15 @@ use std::ops::Range;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct MinimaxDecider {
-    desicion_tree: Arena::<DesicionNode>,
+    desicion_tree: Arena<DesicionNode>,
+    aux: bool,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 struct DesicionNode {
     desicion: BayesianDecision,
-    benficio_esperado: i8,
+    beneficio_esperado: f32,
 }
 
 #[allow(dead_code)]
@@ -24,7 +25,7 @@ enum BayesianDecision {
     Propia(Decision),
     Rival(AbtractDecision),
     Inicio,
-    Final(i8, f32),
+    Final(f32, AbtractDecision),
 }
 
 #[allow(dead_code)]
@@ -33,6 +34,16 @@ enum AbtractDecision {
     Matar(f32),
     Pardar(f32),
     Pasar(f32),
+}
+
+impl AbtractDecision {
+    fn probabilidad(&self) -> f32 {
+        match *self {
+            AbtractDecision::Matar(ret) => ret,
+            AbtractDecision::Pardar(ret) => ret,
+            AbtractDecision::Pasar(ret) => ret,
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -44,8 +55,308 @@ enum Primera {
 }
 
 impl Decider for MinimaxDecider {
-    
-    fn decide(&self, jugador: &Avatar, _: &Mesa) -> Decision{
+    fn decide(&mut self, jugador: &Avatar, mesa: &Mesa) -> Decision {
+        if mesa.ronda_en_juego == 0 {
+            self.aux = if jugador.posicion == mesa.posicion_de_mano {
+                true
+            } else {
+                false
+            };
+        }
+        if self.aux {
+            let le_quedan = cuantas_le_quedan(jugador.posicion, mesa);
+            let este_nodo = self.este_nodo(jugador, mesa);
+            self.actualizar_probabilidades(*jugador, mesa.clone(), este_nodo, le_quedan);
+            self.actualizar_valores_esperados(este_nodo);
+            return self.pick(jugador, este_nodo);
+        }
+        for i in 0..3 {
+            if jugador.mano[i].is_some() {
+                return Decision::Tirar(i);
+            }
+        }
+        Decision::Mazo
+    }
+}
+
+const VALORES_LOOKUP: [u8; 15] = [0, 4, 4, 4, 2, 4, 4, 4, 2, 4, 4, 1, 1, 1, 1];
+
+fn combinations(n: usize, r: usize) -> usize {
+    if n < r {
+        return 0;
+    }
+    (n - r + 1..=n).product::<usize>() / (1..=r).product::<usize>()
+}
+
+fn probabilidad(dado: &[u8], le_quedan: usize, me_importan: Range<usize>) -> f32 {
+    let mut conocidas = vec![0; 15];
+    for &i in dado {
+        conocidas[i as usize] += 1;
+    }
+    let desconocidas: Vec<_> = VALORES_LOOKUP
+        .iter()
+        .zip(conocidas.iter())
+        .map(|(&x, &y)| x - y)
+        .collect();
+    let me_importan = desconocidas[me_importan].iter().fold(0, |acc, x| acc + x) as usize;
+    let total = 40 - dado.len() + 1;
+    1.0 - (combinations(total - me_importan, le_quedan) as f32
+        / combinations(total, le_quedan) as f32)
+}
+
+#[test]
+fn combinations_test() {
+    let comb = combinations(36, 3);
+    assert_eq!(comb, 7140);
+}
+
+#[test]
+fn prob_ancho() {
+    let prob = probabilidad(&[13], 3, 13..15) * 100000.0;
+    assert_eq!(prob.trunc(), (3.0 * 100000.0 / 37.0_f32).trunc());
+}
+
+fn probabilidad_que_me_gane(a: u8, dado: &[u8], le_quedan: usize) -> f32 {
+    probabilidad(dado, le_quedan, (a + 1) as usize..15)
+}
+
+fn probabilidad_que_me_emparde(a: u8, dado: &[u8], le_quedan: usize) -> f32 {
+    probabilidad(dado, le_quedan, a as usize..(a + 1) as usize)
+}
+
+fn probabilidad_que_pierda(a: u8, dado: &[u8], le_quedan: usize) -> f32 {
+    probabilidad(dado, le_quedan, 0..a as usize)
+}
+
+fn tirar(avatar: &mut Avatar, carta: usize, mesa: &mut Mesa) {
+    let index = match mesa.cartas[avatar.posicion]
+        .iter()
+        .position(|c| c.is_none())
+    {
+        Some(i) => i,
+        None => return,
+    };
+    mesa.cartas[avatar.posicion][index] = avatar.mano[carta].take();
+}
+
+fn cuantas_le_quedan(posicion: usize, mesa: &Mesa) -> usize {
+    mesa.cartas
+        .iter()
+        .enumerate()
+        .filter(|(p, _)| *p == posicion+1%mesa.numero_de_jugadores)
+        .map(|(_, c)| c)
+        .flatten()
+        .flatten()
+        .fold(3, |acc, _| acc - 1)
+
+}
+
+#[allow(dead_code)]
+impl MinimaxDecider {
+    pub fn new() -> MinimaxDecider {
+        let mut desicion_tree = Arena::<DesicionNode>::new();
+
+        let root = desicion_tree.add_new_node(
+            DesicionNode {
+                desicion: BayesianDecision::Inicio,
+                beneficio_esperado: 0.0,
+            },
+            None,
+        );
+
+        llenar_mano(
+            &mut desicion_tree,
+            &[0, 1, 2],
+            root,
+            0,
+            true,
+            Primera::Pardas,
+        );
+
+        MinimaxDecider {
+            desicion_tree,
+            aux: false,
+        }
+    }
+
+    fn actualizar_probabilidades(
+        &self,
+        avatar: Avatar,
+        mesa: Mesa,
+        parent_id: usize,
+        le_quedan: usize,
+    ) {
+        if let Some(childs) = self.desicion_tree.get_children_of(parent_id) {
+            for child in childs {
+                let mut le_quedan = le_quedan;
+                let mut avatar = avatar;
+                let mut mesa = mesa.clone();
+                if let Some(node_arc) = self.desicion_tree.get_node_arc(child) {
+                    let mut node = node_arc.write().unwrap();
+                    match node.payload.desicion {
+                        BayesianDecision::Propia(desicion) => match desicion {
+                            Decision::Tirar(carta) => {
+                                tirar(&mut avatar, carta, &mut mesa);
+                            }
+                            Decision::Mazo => {}
+                        },
+                        BayesianDecision::Rival(desicion) => {
+                            if let Some(propia_previa) =
+                                mesa.cartas[avatar.posicion][mesa.ronda_en_juego]
+                            {
+                                let propia_previa = propia_previa.valor_juego;
+                                let mut cartas_vistas = Vec::new();
+                                for carta in avatar.mano {
+                                    if let Some(carta) = carta {
+                                        cartas_vistas.push(carta.valor_juego);
+                                    }
+                                }
+                                for mano in &mesa.cartas {
+                                    for carta in mano {
+                                        if let Some(carta) = carta {
+                                            cartas_vistas.push(carta.valor_juego);
+                                        }
+                                    }
+                                }
+                                match desicion {
+                                    AbtractDecision::Matar(_) => {
+                                        let new_prob = probabilidad_que_me_gane(
+                                            propia_previa,
+                                            &cartas_vistas,
+                                            le_quedan,
+                                        );
+                                        node.payload.desicion = BayesianDecision::Rival(
+                                            AbtractDecision::Matar(new_prob),
+                                        );
+                                    }
+                                    AbtractDecision::Pardar(_) => {
+                                        let new_prob = probabilidad_que_me_emparde(
+                                            propia_previa,
+                                            &cartas_vistas,
+                                            le_quedan,
+                                        );
+                                        node.payload.desicion = BayesianDecision::Rival(
+                                            AbtractDecision::Pardar(new_prob),
+                                        );
+                                    }
+                                    AbtractDecision::Pasar(_) => {
+                                        let new_prob = probabilidad_que_pierda(
+                                            propia_previa,
+                                            &cartas_vistas,
+                                            le_quedan,
+                                        );
+                                        node.payload.desicion = BayesianDecision::Rival(
+                                            AbtractDecision::Pasar(new_prob),
+                                        );
+                                    }
+                                }
+                                le_quedan -= 1;
+                            }
+                        }
+                        BayesianDecision::Final(beneficio_esperado, tipo_de_final) => {
+                            if let Some(propia_previa) =
+                                mesa.cartas[avatar.posicion][mesa.ronda_en_juego]
+                            {
+                                let propia_previa = propia_previa.valor_juego;
+                                let mut cartas_vistas = Vec::new();
+                                for carta in avatar.mano {
+                                    if let Some(carta) = carta {
+                                        cartas_vistas.push(carta.valor_juego);
+                                    }
+                                }
+                                for mano in &mesa.cartas {
+                                    for carta in mano {
+                                        if let Some(carta) = carta {
+                                            cartas_vistas.push(carta.valor_juego);
+                                        }
+                                    }
+                                }
+                                match tipo_de_final {
+                                    AbtractDecision::Matar(_) => {
+                                        let new_prob = probabilidad_que_me_gane(
+                                            propia_previa,
+                                            &cartas_vistas,
+                                            le_quedan,
+                                        );
+                                        node.payload.desicion = BayesianDecision::Final(
+                                            beneficio_esperado,
+                                            AbtractDecision::Matar(new_prob),
+                                        );
+                                    }
+                                    AbtractDecision::Pardar(_) => {
+                                        let new_prob = probabilidad_que_me_emparde(
+                                            propia_previa,
+                                            &cartas_vistas,
+                                            le_quedan,
+                                        );
+                                        node.payload.desicion = BayesianDecision::Final(
+                                            beneficio_esperado,
+                                            AbtractDecision::Pardar(new_prob),
+                                        );
+                                    }
+                                    AbtractDecision::Pasar(_) => {
+                                        let new_prob = probabilidad_que_pierda(
+                                            propia_previa,
+                                            &cartas_vistas,
+                                            le_quedan,
+                                        );
+                                        node.payload.desicion = BayesianDecision::Final(
+                                            beneficio_esperado,
+                                            AbtractDecision::Pasar(new_prob),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        BayesianDecision::Inicio => {}
+                    }
+                }
+                self.actualizar_probabilidades(avatar, mesa, child, le_quedan);
+            }
+        }
+    }
+
+    fn actualizar_valores_esperados(&self, parent_id: usize) -> f32 {
+        if let Some(childs) = self.desicion_tree.get_children_of(parent_id) {
+            let mut beneficio_esperado = Vec::new();
+            for child in childs {
+                if let Some(node_arc) = self.desicion_tree.get_node_arc(child) {
+                    let nuevo_valor_esperado = self.actualizar_valores_esperados(child);
+                    let mut node = node_arc.write().unwrap();
+                    match node.payload.desicion {
+                        BayesianDecision::Propia(_) => {
+                            node.payload.beneficio_esperado = nuevo_valor_esperado;
+                            beneficio_esperado.push((2.0, node.payload.beneficio_esperado));
+                        }
+                        BayesianDecision::Rival(desicion) => {
+                            node.payload.beneficio_esperado = nuevo_valor_esperado;
+                            beneficio_esperado
+                                .push((desicion.probabilidad(), node.payload.beneficio_esperado));
+                        }
+                        BayesianDecision::Final(beneficio, desicion) => {
+                            beneficio_esperado.push((desicion.probabilidad(), beneficio));
+                        }
+                        BayesianDecision::Inicio => {}
+                    }
+                }
+            }
+            let prob_propia = beneficio_esperado
+                .iter()
+                .filter(|(p, _)| *p <= 1.0)
+                .fold(1.0, |acc, (x, _)| acc - x);
+            return beneficio_esperado
+                .iter()
+                .map(|&(p, b)| if p > 1.0 { (prob_propia, b) } else { (p, b) })
+                .fold(0.0, |acc, (p, b)| acc + (p * b as f32));
+        }
+        return 0.0;
+    }
+
+    fn este_nodo(&self, _avatar: &Avatar, _mesa: &Mesa) -> usize {
+        0
+    }
+
+    fn pick(&self, jugador: &Avatar, _este_nodo: usize) -> Decision {
         for i in 0..3 {
             if jugador.mano[i].is_some() {
                 return Decision::Tirar(i);
@@ -54,305 +365,270 @@ impl Decider for MinimaxDecider {
         Decision::Mazo
     }
 
-}
-
-const VALORES_LOOKUP: [u8;15] = [ 0, 4, 4, 4, 2, 4, 4, 4, 2, 4, 4, 1, 1, 1, 1 ];
-
-fn combinations(n: usize, r: usize) -> usize {
-    (n - r + 1..=n).product::<usize>() / (1..=r).product::<usize>()
-}
-
-fn probabilidad(a: u8, dado:&[u8], le_quedan: usize, me_importan: Range<usize>) -> f32 {
-    let mut conocidas = vec![0; 15]; 
-    for &i in dado { conocidas[i as usize] += 1; }
-    let desconocidas: Vec<_> = VALORES_LOOKUP.iter().zip(conocidas.iter()).map(|(&x, &y)| x - y).collect();
-    let me_importan = desconocidas[me_importan].iter().fold(0, |acc, x| acc + x) as usize;
-    let total = 40-dado.len()-le_quedan;
-    1.0-(combinations(total-me_importan, le_quedan)/combinations(total, le_quedan)) as f32
-}
-
-fn probabilidad_que_me_gane(a: u8, dado:&[u8], le_quedan: usize) -> f32 {
-    probabilidad(a, dado, le_quedan, (a+1) as usize..15)
-}
-
-fn probabilidad_que_me_emparde(a: u8, dado:&[u8], le_quedan: usize) -> f32 {
-    probabilidad(a, dado, le_quedan, a as usize..(a+1) as usize)
-}
-
-fn probabilidad_que_pierda(a: u8, dado:&[u8], le_quedan: usize) -> f32 {
-    probabilidad(a, dado, le_quedan, 0..a as usize)
-}
-
-fn tirar(avatar: &mut Avatar, carta: usize, mesa: &mut Mesa) {
-    let index = match mesa.cartas[avatar.posicion].iter().position(|c| c.is_none()) {
-        Some(i) => i,
-        None => return,
-    };
-    mesa.cartas[avatar.posicion][index] = avatar.mano[carta].take();
-}
-
-
-#[allow(dead_code)]
-impl MinimaxDecider {
-    pub fn new() -> MinimaxDecider {
-        let mut desicion_tree = Arena::<DesicionNode>::new();
-
-        let root = desicion_tree.add_new_node(
-            DesicionNode{
-                desicion: BayesianDecision::Inicio,
-                benficio_esperado: 0
-            },
-            None
-        );
-
-        llenar_mano(&mut desicion_tree, &[0,1,2], root, 0, true, Primera::Pardas);
-
-        MinimaxDecider { desicion_tree }
-    }
-
-    fn actualizar_probabilidades(&self, avatar: Avatar, mesa: Mesa, parent_id: usize, le_quedan: usize){
-        if let Some(childs) = self.desicion_tree.get_children_of(parent_id) {
-            for child in childs {
-                let mut le_quedan = le_quedan;
-                let mut avatar = avatar;
-                let mut mesa = mesa.clone();
-                if let Some(node_arc) = self.desicion_tree.get_node_arc(child) {
-                    let node = node_arc.read().unwrap();
-                    match node.payload.desicion {
-                        BayesianDecision::Propia(desicion) => {
-                            match desicion {
-                                Decision::Tirar(carta) => {
-                                    tirar(&mut avatar, carta, &mut mesa);
-                                },
-                                Decision::Mazo => {},
-                            }
-                        },
-                        BayesianDecision::Rival(desicion) => {
-                            if let Some(propia_previa) = self.desicion_tree.get_node_arc(parent_id) {
-                                let propia_previa = propia_previa.read().unwrap();
-                                let propia_previa = match propia_previa.payload.desicion {
-                                    BayesianDecision::Propia(desicion) => {
-                                        match desicion {
-                                            Decision::Tirar(n) => {avatar.mano[n]},
-                                            _ => None,
-                                        }
-                                    },
-                                    _ => None,
-                                };
-                                let mut cartas_vistas = Vec::new();
-                                for carta in avatar.mano {
-                                    if let Some (carta) = carta {
-                                        cartas_vistas.push(carta.valor_juego);
-                                    }
-                                }
-                                for mano in &mesa.cartas {
-                                    for carta in mano {
-                                        if let Some (carta) = carta {
-                                            cartas_vistas.push(carta.valor_juego);
-                                        }
-                                    }
-                                }
-
-                                let propia_previa = match propia_previa {
-                                    Some(carta) => carta.valor_juego,
-                                    None => 0,
-                                };
-                                match desicion {
-                                    AbtractDecision::Matar(_) => {
-                                        let new_prob = probabilidad_que_me_gane(propia_previa, &cartas_vistas, le_quedan);
-                                        node_arc.write().unwrap().payload.desicion = BayesianDecision::Rival(AbtractDecision::Matar(new_prob));
-                                    },
-                                    AbtractDecision::Pardar(_) => {
-                                        let new_prob = probabilidad_que_me_emparde(propia_previa, &cartas_vistas, le_quedan);
-                                        node_arc.write().unwrap().payload.desicion = BayesianDecision::Rival(AbtractDecision::Pardar(new_prob));
-                                    },
-                                    AbtractDecision::Pasar(_) => {
-                                        let new_prob = probabilidad_que_pierda(propia_previa, &cartas_vistas, le_quedan);
-                                        node_arc.write().unwrap().payload.desicion = BayesianDecision::Rival(AbtractDecision::Pasar(new_prob));
-                                    },
-                                }
-                                le_quedan -= 1;
-                            }
-                        },
-                        BayesianDecision::Final(_, probabilidad) => {},
-                        BayesianDecision::Inicio => {},
-                    }
-                }
-                self.actualizar_probabilidades(avatar, mesa, child, le_quedan);
+    /*fn minimax(&self, parent_id: usize, alpha: f32, beta: f32, maximizingPlayer: bool) {
+       if game_over {
+          return evaluation;
+       }
+       let childs = self.desicion_tree.get_children_of(parent_id);
+       if maximizingPlayer {
+         let max_eval = f32::NEG_INFINITY;
+         for child in childs {
+            let eval = self.minimax(child, alpha, beta, false);
+            max_eval = max_eval.max(eval);
+            alpha = alpha.max(eval);
+            if beta <= alpha{
+               break;
+             }
+         }
+          return max_eval
+       } else {
+          let min_eval = f32::INFINITY;
+          for child in childs {
+            let eval = self.minimax(child, alpha, beta, true);
+            min_eval = min_eval.min(eval);
+            beta = beta.min(eval);
+            if beta <= alpha {
+               break;
             }
-        }
-    }
+          }
+          return min_eval
+       }
+    }*/
 }
 
-#[allow(dead_code)]
-fn llenar_mano(desicion_tree: &mut Arena::<DesicionNode>, disponibles: &[usize], parent_id: usize, ronda: i8, soy_mano: bool, primera: Primera){
+fn llenar_mano(
+    desicion_tree: &mut Arena<DesicionNode>,
+    disponibles: &[usize],
+    parent_id: usize,
+    ronda: i8,
+    soy_mano: bool,
+    primera: Primera,
+) {
     let ronda = ronda + 1;
     for carta in disponibles {
         let propia = desicion_tree.add_new_node(
-            DesicionNode{
+            DesicionNode {
                 desicion: BayesianDecision::Propia(Decision::Tirar(*carta)),
-                benficio_esperado: -100,
+                beneficio_esperado: -100.0,
             },
-            Some(parent_id)
+            Some(parent_id),
         );
-        let nuevas_disp: Vec<usize> = disponibles.iter().filter(|&n| n!=carta).map(|r| *r).collect();
+        let nuevas_disp: Vec<usize> = disponibles
+            .iter()
+            .filter(|&n| n != carta)
+            .map(|r| *r)
+            .collect();
         if soy_mano {
             let mata = desicion_tree.add_new_node(
-                DesicionNode{
+                DesicionNode {
                     desicion: BayesianDecision::Rival(AbtractDecision::Matar(1.0)),
-                    benficio_esperado: 100,
+                    beneficio_esperado: 100.0,
                 },
-                Some(propia)
+                Some(propia),
             );
             let parda = desicion_tree.add_new_node(
-                DesicionNode{
+                DesicionNode {
                     desicion: BayesianDecision::Rival(AbtractDecision::Pardar(1.0)),
-                    benficio_esperado: 100,
+                    beneficio_esperado: 100.0,
                 },
-                Some(propia)
+                Some(propia),
             );
             let pierde = desicion_tree.add_new_node(
-                DesicionNode{
+                DesicionNode {
                     desicion: BayesianDecision::Rival(AbtractDecision::Pasar(1.0)),
-                    benficio_esperado: 100,
+                    beneficio_esperado: 100.0,
                 },
-                Some(propia)
+                Some(propia),
             );
-            match ronda{
+            match ronda {
                 1 => {
-                    llenar_mano(desicion_tree, &nuevas_disp, mata, ronda, false, Primera::Tiene);
-                    llenar_mano(desicion_tree, &nuevas_disp, parda, ronda, true, Primera::Pardas);
-                    llenar_mano(desicion_tree, &nuevas_disp, pierde, ronda, true, Primera::Tengo);
+                    llenar_mano(
+                        desicion_tree,
+                        &nuevas_disp,
+                        mata,
+                        ronda,
+                        false,
+                        Primera::Tiene,
+                    );
+                    llenar_mano(
+                        desicion_tree,
+                        &nuevas_disp,
+                        parda,
+                        ronda,
+                        true,
+                        Primera::Pardas,
+                    );
+                    llenar_mano(
+                        desicion_tree,
+                        &nuevas_disp,
+                        pierde,
+                        ronda,
+                        true,
+                        Primera::Tengo,
+                    );
                 }
                 2 => {
                     match primera {
                         Primera::Tengo => {
                             llenar_mano(desicion_tree, &nuevas_disp, mata, ronda, false, primera);
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                    desicion: BayesianDecision::Final(1, 1.0),
-                                    benficio_esperado: 1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        1.0,
+                                        AbtractDecision::Pardar(1.0),
+                                    ),
+                                    beneficio_esperado: 1.0,
                                 },
-                                Some(parda)
+                                Some(parda),
                             );
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                    desicion: BayesianDecision::Final(1, 1.0),
-                                    benficio_esperado: 1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        1.0,
+                                        AbtractDecision::Pasar(1.0),
+                                    ),
+                                    beneficio_esperado: 1.0,
                                 },
-                                Some(pierde)
+                                Some(pierde),
                             );
-                        },
+                        }
                         Primera::Pardas => {
                             llenar_mano(desicion_tree, &nuevas_disp, parda, ronda, true, primera);
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                        desicion: BayesianDecision::Final(-1, 1.0),
-                                        benficio_esperado: -1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        -1.0,
+                                        AbtractDecision::Matar(1.0),
+                                    ),
+                                    beneficio_esperado: -1.0,
                                 },
-                                Some(mata)
+                                Some(mata),
                             );
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                    desicion: BayesianDecision::Final(1, 1.0),
-                                    benficio_esperado: 1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        1.0,
+                                        AbtractDecision::Pasar(1.0),
+                                    ),
+                                    beneficio_esperado: 1.0,
                                 },
-                                Some(pierde)
+                                Some(pierde),
                             );
-                        },
+                        }
                         Primera::Tiene => {}
                     };
-                },
+                }
                 3 => {
                     match primera {
-                        Primera::Tengo => {},
+                        Primera::Tengo => {}
                         Primera::Pardas => {
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                        desicion: BayesianDecision::Final(-1, 1.0),
-                                        benficio_esperado: -1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        -1.0,
+                                        AbtractDecision::Matar(1.0),
+                                    ),
+                                    beneficio_esperado: -1.0,
                                 },
-                                Some(mata)
+                                Some(mata),
                             );
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                        desicion: BayesianDecision::Final(0, 1.0),
-                                        benficio_esperado: 0,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        0.0,
+                                        AbtractDecision::Pardar(1.0),
+                                    ),
+                                    beneficio_esperado: 0.0,
                                 },
-                                Some(parda)
+                                Some(parda),
                             );
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                    desicion: BayesianDecision::Final(1, 1.0),
-                                    benficio_esperado: 1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        1.0,
+                                        AbtractDecision::Pasar(1.0),
+                                    ),
+                                    beneficio_esperado: 1.0,
                                 },
-                                Some(pierde)
+                                Some(pierde),
                             );
-                        },
+                        }
                         Primera::Tiene => {
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                        desicion: BayesianDecision::Final(-1, 1.0),
-                                        benficio_esperado: -1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        -1.0,
+                                        AbtractDecision::Matar(1.0),
+                                    ),
+                                    beneficio_esperado: -1.0,
                                 },
-                                Some(mata)
+                                Some(mata),
                             );
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                        desicion: BayesianDecision::Final(-1, 1.0),
-                                        benficio_esperado: -1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        -1.0,
+                                        AbtractDecision::Pardar(1.0),
+                                    ),
+                                    beneficio_esperado: -1.0,
                                 },
-                                Some(parda)
+                                Some(parda),
                             );
                             desicion_tree.add_new_node(
-                                DesicionNode{
-                                    desicion: BayesianDecision::Final(1, 1.0),
-                                    benficio_esperado: 1,
+                                DesicionNode {
+                                    desicion: BayesianDecision::Final(
+                                        1.0,
+                                        AbtractDecision::Pasar(1.0),
+                                    ),
+                                    beneficio_esperado: 1.0,
                                 },
-                                Some(pierde)
+                                Some(pierde),
                             );
                         }
                     };
-                },
+                }
                 _ => {}
             };
             continue;
         }
-        desicion_tree.add_new_node( //Pierdo
-            DesicionNode{
-                desicion: BayesianDecision::Final(-1, 1.0),
-                benficio_esperado: -1,
+        desicion_tree.add_new_node(
+            //Pierdo
+            DesicionNode {
+                desicion: BayesianDecision::Final(-1.0, AbtractDecision::Matar(1.0)),
+                beneficio_esperado: -1.0,
             },
-            Some(propia)
+            Some(propia),
         );
         let pardo_esperado = match ronda {
-            2 => -1,
-            3 => 1,
-            _ => 0
+            2 => -1.0,
+            3 => 1.0,
+            _ => 0.0,
         };
-        desicion_tree.add_new_node( //Pardo
-            DesicionNode{
-                desicion: BayesianDecision::Final(pardo_esperado, 1.0),
-                benficio_esperado: pardo_esperado,
+        desicion_tree.add_new_node(
+            //Pardo
+            DesicionNode {
+                desicion: BayesianDecision::Final(pardo_esperado, AbtractDecision::Pardar(1.0)),
+                beneficio_esperado: pardo_esperado,
             },
-            Some(propia)
+            Some(propia),
         );
-        if ronda == 2 { 
+        if ronda == 2 {
             llenar_mano(desicion_tree, &nuevas_disp, propia, ronda, true, primera);
-            continue; 
+            continue;
         }
-        desicion_tree.add_new_node( //Gano
-            DesicionNode{
-                desicion: BayesianDecision::Final(1, 1.0),
-                benficio_esperado: 1,
+        desicion_tree.add_new_node(
+            //Gano
+            DesicionNode {
+                desicion: BayesianDecision::Final(1.0, AbtractDecision::Pasar(1.0)),
+                beneficio_esperado: 1.0,
             },
-            Some(propia)
+            Some(propia),
         );
     }
 }
 
 #[allow(dead_code)]
-fn pretty_print_tree(root: usize, desicion_tree: &Arena::<DesicionNode>) {
+fn pretty_print_tree(root: usize, desicion_tree: &Arena<DesicionNode>) {
     let mut queue = VecDeque::new();
     queue.push_back(Some(root));
 
@@ -360,7 +636,9 @@ fn pretty_print_tree(root: usize, desicion_tree: &Arena::<DesicionNode>) {
     let mut depth = 0;
     while !queue.is_empty() {
         depth += 1;
-        if offset > 0 { offset = (offset-1)/3; }
+        if offset > 0 {
+            offset = (offset - 1) / 3;
+        }
         let level_size = queue.len();
         let mut nodes_on_level = Vec::new();
         for _ in 0..level_size {
@@ -368,9 +646,11 @@ fn pretty_print_tree(root: usize, desicion_tree: &Arena::<DesicionNode>) {
             nodes_on_level.push(node);
             let node = match node {
                 Some(n) => n,
-                None => { 
-                    if depth <4 {
-                        for _ in 0..3 { queue.push_back(None); }
+                None => {
+                    if depth < 4 {
+                        for _ in 0..3 {
+                            queue.push_back(None);
+                        }
                     }
                     continue;
                 }
@@ -383,8 +663,10 @@ fn pretty_print_tree(root: usize, desicion_tree: &Arena::<DesicionNode>) {
                 queue.push_back(Some(*child));
             }
             match node.payload.desicion {
-                BayesianDecision::Final(_, _) => { continue; },
-                _ => {},
+                BayesianDecision::Final(_, _) => {
+                    continue;
+                }
+                _ => {}
             }
             for _ in child_cont..3 {
                 queue.push_back(None);
@@ -403,7 +685,7 @@ fn pretty_print_tree(root: usize, desicion_tree: &Arena::<DesicionNode>) {
                     };
                     value
                 }
-                None => " "
+                None => " ",
             };
             print!("{}", " ".repeat(offset));
             print!("{}", value);
@@ -411,7 +693,6 @@ fn pretty_print_tree(root: usize, desicion_tree: &Arena::<DesicionNode>) {
         }
         println!();
     }
-
 }
 
 #[test]

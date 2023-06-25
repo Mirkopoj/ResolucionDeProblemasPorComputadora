@@ -1,5 +1,5 @@
-use itertools::enumerate;
 use enum_iterator::all;
+use itertools::enumerate;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
@@ -29,11 +29,11 @@ impl Mazo {
     pub fn repartir<T: Decider + ?Sized>(&self, jugadores: &mut Vec<Jugador<T>>) {
         let numero_de_jugadores = jugadores.len();
         for (numero_de_jugador, mut jugador) in enumerate(jugadores) {
-            jugador.avatar.mano =  [
-                    Some(self.cartas[numero_de_jugador]),
-                    Some(self.cartas[numero_de_jugador + numero_de_jugadores]),
-                    Some(self.cartas[numero_de_jugador + numero_de_jugadores * 2]),
-                ];
+            jugador.avatar.mano = [
+                Some(self.cartas[numero_de_jugador]),
+                Some(self.cartas[numero_de_jugador + numero_de_jugadores]),
+                Some(self.cartas[numero_de_jugador + numero_de_jugadores * 2]),
+            ];
         }
     }
 }

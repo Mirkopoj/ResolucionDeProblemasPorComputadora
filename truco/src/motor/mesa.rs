@@ -5,11 +5,11 @@ use crate::motor::carta::Carta;
 
 #[derive(Debug, Clone)]
 pub struct Mesa {
-    pub(super) numero_de_jugadores: usize,
+    pub numero_de_jugadores: usize,
     pub cartas: Vec<[Option<Carta>; 3]>,
     pub(super) rondas: Vec<Option<Equipo>>,
-    ronda_en_juego: usize,
-    pub(super) posicion_de_mano: usize,
+    pub ronda_en_juego: usize,
+    pub posicion_de_mano: usize,
     cuenta_vueltas: usize,
 }
 
@@ -112,17 +112,17 @@ impl Mesa {
         None
     }
 
-    pub fn siguiente(&mut self){
+    pub fn siguiente(&mut self) {
         self.ronda_en_juego = 0;
         self.rondas = Vec::new();
         self.cuenta_vueltas += 1;
-        self.posicion_de_mano = self.cuenta_vueltas%self.numero_de_jugadores;
+        self.posicion_de_mano = self.cuenta_vueltas % self.numero_de_jugadores;
         self.cartas = (0..self.numero_de_jugadores).map(|_| [None; 3]).collect();
     }
 
     pub fn indices_de_turnos(&self) -> Vec<usize> {
-        (self.posicion_de_mano..self.posicion_de_mano+self.numero_de_jugadores)
-            .map(|i| i%self.numero_de_jugadores)
+        (self.posicion_de_mano..self.posicion_de_mano + self.numero_de_jugadores)
+            .map(|i| i % self.numero_de_jugadores)
             .collect()
     }
 }
@@ -130,7 +130,12 @@ impl Mesa {
 impl Display for Mesa {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in (0..3).rev() {
-            let max_val = self.cartas.iter().filter(|&c| c[i].is_some()).map(|c| c[i].unwrap().valor_juego).max();
+            let max_val = self
+                .cartas
+                .iter()
+                .filter(|&c| c[i].is_some())
+                .map(|c| c[i].unwrap().valor_juego)
+                .max();
             for cartas in &self.cartas {
                 match cartas[i] {
                     Some(c) => {
@@ -139,7 +144,7 @@ impl Display for Mesa {
                             prt = prt.green();
                         }
                         write!(f, " {}", prt)
-                    },
+                    }
                     None => write!(f, "    "),
                 }?;
             }

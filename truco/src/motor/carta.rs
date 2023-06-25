@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use enum_iterator::Sequence;
+use std::fmt::Display;
 
 #[derive(Sequence, Debug, Clone, Copy, PartialEq)]
 pub enum Palo {

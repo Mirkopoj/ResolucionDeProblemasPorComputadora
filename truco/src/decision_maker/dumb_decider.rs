@@ -6,8 +6,7 @@ use crate::motor::mesa::Mesa;
 pub struct DumbDecider;
 
 impl Decider for DumbDecider {
-    
-    fn decide(&self, jugador: &Avatar, _: &Mesa) -> Decision{
+    fn decide(&mut self, jugador: &Avatar, _: &Mesa) -> Decision {
         for i in 0..3 {
             if jugador.mano[i].is_some() {
                 return Decision::Tirar(i);
@@ -15,11 +14,10 @@ impl Decider for DumbDecider {
         }
         Decision::Mazo
     }
-
 }
 
 impl DumbDecider {
     pub fn new() -> DumbDecider {
-        DumbDecider {  }
+        DumbDecider {}
     }
 }
