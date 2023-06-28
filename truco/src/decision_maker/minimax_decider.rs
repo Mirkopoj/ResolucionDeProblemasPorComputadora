@@ -1,7 +1,8 @@
 use super::{Decider, Decision};
 use crate::motor::jugador::Avatar;
 use crate::motor::mesa::Mesa;
-use r3bl_rs_utils::Arena;
+use itertools::Itertools;
+use r3bl_rs_utils::{Arena, Node};
 use std::collections::VecDeque;
 use std::ops::Range;
 
@@ -99,7 +100,7 @@ fn probabilidad(dado: &[u8], le_quedan: usize, me_importan: Range<usize>) -> f32
         .map(|(&x, &y)| x - y)
         .collect();
     let me_importan = desconocidas[me_importan].iter().fold(0, |acc, x| acc + x) as usize;
-    let total = 40 - dado.len() + 1;
+    let total = 40 - dado.len();
     1.0 - (combinations(total - me_importan, le_quedan) as f32
         / combinations(total, le_quedan) as f32)
 }
@@ -112,7 +113,7 @@ fn combinations_test() {
 
 #[test]
 fn prob_ancho() {
-    let prob = probabilidad(&[13], 3, 13..15) * 100000.0;
+    let prob = probabilidad(&[13,1,1], 3, 13..15) * 100000.0;
     assert_eq!(prob.trunc(), (3.0 * 100000.0 / 37.0_f32).trunc());
 }
 
@@ -344,9 +345,20 @@ impl MinimaxDecider {
                 .iter()
                 .filter(|(p, _)| *p <= 1.0)
                 .fold(1.0, |acc, (x, _)| acc - x);
+            let (last_p, last_b) = beneficio_esperado.last().unwrap();
             return beneficio_esperado
                 .iter()
                 .map(|&(p, b)| if p > 1.0 { (prob_propia, b) } else { (p, b) })
+                .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+                .scan(1.0, |acc, (p, b)| {
+                    let scaled_p = if (p,b)!=(*last_p, *last_b) {
+                            *acc * p
+                        }else{
+                            *acc
+                        };
+                    *acc -= scaled_p;
+                    Some((scaled_p, b))
+                })
                 .fold(0.0, |acc, (p, b)| acc + (p * b as f32));
         }
         return 0.0;
@@ -394,6 +406,54 @@ impl MinimaxDecider {
           return min_eval
        }
     }*/
+}
+
+fn known_cards(avatar: &Avatar, mesa: &Mesa) -> Vec<u8>{ 
+    let mut ret = Vec::new();
+    for carta in avatar.mano {
+        if let Some(carta) = carta {
+            ret.push(carta.valor_juego);
+        }
+    }
+    for mano in &mesa.cartas {
+        for carta in mano {
+            if let Some(carta) = carta {
+                ret.push(carta.valor_juego);
+            }
+        }
+    }
+    ret
+}
+
+trait ExpectedValue {
+    fn update_expected_value(&mut self, desicion_tree: &Arena<DesicionNode>, avatar: Avatar, mesa: Mesa);
+}
+
+impl ExpectedValue for Node<DesicionNode> {
+    fn update_expected_value(&mut self, desicion_tree: &Arena<DesicionNode>, avatar: Avatar, mesa: Mesa) {
+        let mut evaluations = Vec::new();
+        for &child in &self.children_ids {
+            let node = desicion_tree.get_node_arc(child).unwrap();
+            let mut node = node.write().unwrap();
+            node.update_expected_value(desicion_tree, avatar, mesa.clone());
+            evaluations.push(node.payload);
+        }
+        let minimizing = match self.payload.desicion {
+            BayesianDecision::Rival(_) => true,
+            _ => false,
+        };
+        let knowns = known_cards(&avatar, &mesa);
+        evaluations
+            .iter()
+            .sorted_by(|a,b| {
+                let (a,b) = if minimizing {
+                    (a.beneficio_esperado, b.beneficio_esperado)
+                } else {
+                    (b.beneficio_esperado, a.beneficio_esperado)
+                };
+                a.partial_cmp(&b).unwrap()
+            });
+    }
 }
 
 fn llenar_mano(
