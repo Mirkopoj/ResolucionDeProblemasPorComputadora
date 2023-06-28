@@ -24,7 +24,6 @@ pub enum Numero {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
 pub struct Carta {
     pub(super) palo: Palo,
     numero: Numero,

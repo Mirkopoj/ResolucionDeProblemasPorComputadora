@@ -6,7 +6,6 @@ use crate::motor::carta::Carta;
 use crate::motor::mesa::Mesa;
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct Jugador<DecisionMaker: Decider + ?Sized> {
     pub(crate) avatar: Avatar,
     decision_maker: Box<DecisionMaker>,
@@ -90,7 +89,7 @@ impl<DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
         ret
     }
 
-    pub(crate) fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
+     fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
         let index = match mesa.cartas[self.avatar.posicion]
             .iter()
             .position(|c| c.is_none())

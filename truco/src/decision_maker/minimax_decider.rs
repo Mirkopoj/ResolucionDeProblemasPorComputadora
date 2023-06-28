@@ -6,21 +6,18 @@ use r3bl_rs_utils::{Arena, Node};
 use std::collections::VecDeque;
 use std::ops::Range;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct MinimaxDecider {
     desicion_tree: Arena<DesicionNode>,
     aux: bool,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 struct DesicionNode {
     desicion: BayesianDecision,
     beneficio_esperado: f32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 enum BayesianDecision {
     Propia(Decision),
@@ -29,7 +26,6 @@ enum BayesianDecision {
     Final(f32, AbtractDecision),
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 enum AbtractDecision {
     Matar(f32),
@@ -47,7 +43,6 @@ impl AbtractDecision {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 enum Primera {
     Tengo,
@@ -442,7 +437,7 @@ impl ExpectedValue for Node<DesicionNode> {
             BayesianDecision::Rival(_) => true,
             _ => false,
         };
-        let knowns = known_cards(&avatar, &mesa);
+        let _knowns = known_cards(&avatar, &mesa);
         evaluations
             .iter()
             .sorted_by(|a,b| {
