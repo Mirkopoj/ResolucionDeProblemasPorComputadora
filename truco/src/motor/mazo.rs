@@ -6,6 +6,7 @@ use rand::thread_rng;
 use crate::decision_maker::Decider;
 use crate::motor::carta::{Carta, Numero, Palo};
 use crate::motor::jugador::Jugador;
+use crate::motor::mesa::Mesa;
 
 pub struct Mazo {
     cartas: Vec<Carta>,
@@ -29,11 +30,11 @@ impl Mazo {
     pub fn repartir<T: Decider + ?Sized>(&self, jugadores: &mut Vec<Jugador<T>>) {
         let numero_de_jugadores = jugadores.len();
         for (numero_de_jugador, mut jugador) in enumerate(jugadores) {
-            jugador.avatar.mano = [
+            jugador.dar_mano([
                 Some(self.cartas[numero_de_jugador]),
                 Some(self.cartas[numero_de_jugador + numero_de_jugadores]),
                 Some(self.cartas[numero_de_jugador + numero_de_jugadores * 2]),
-            ];
+            ]);
         }
     }
 }

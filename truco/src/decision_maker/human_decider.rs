@@ -11,7 +11,7 @@ impl Decider for HumanDecider {
         loop {
             println!("{}", jugador);
             for i in 0..3 {
-                let opcion = if jugador.mano[i].is_some() {
+                let opcion = if jugador.carta(i).is_some() {
                     format!("  {} ", i + 1)
                 } else {
                     "    ".to_string()
@@ -29,7 +29,7 @@ impl Decider for HumanDecider {
                     match n {
                         1 | 2 | 3 => {
                             let n = n - 1;
-                            if jugador.mano[n].is_some() {
+                            if jugador.carta(n).is_some() {
                                 return Decision::Tirar(n);
                             }
                         }

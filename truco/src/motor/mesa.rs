@@ -5,11 +5,11 @@ use crate::motor::carta::Carta;
 
 #[derive(Debug, Clone)]
 pub struct Mesa {
-    pub numero_de_jugadores: usize,
-    pub cartas: Vec<[Option<Carta>; 3]>,
-    pub(super) rondas: Vec<Option<Equipo>>,
-    pub ronda_en_juego: usize,
-    pub posicion_de_mano: usize,
+    numero_de_jugadores: usize,
+    cartas: Vec<[Option<Carta>; 3]>,
+    rondas: Vec<Option<Equipo>>,
+    ronda_en_juego: usize,
+    posicion_de_mano: usize,
     cuenta_vueltas: usize,
 }
 
@@ -38,7 +38,7 @@ impl Mesa {
                 .iter()
                 .enumerate()
                 .map(|(i, &juego)| match juego[self.ronda_en_juego] {
-                    Some(v) => (i, v.valor_juego),
+                    Some(v) => (i, v.valor_juego()),
                     None => (i, 0),
                 });
         let max_nosotros = valores_jugados
@@ -125,6 +125,30 @@ impl Mesa {
             .map(|i| i % self.numero_de_jugadores)
             .collect()
     }
+
+    pub fn numero_de_jugadores(&self) -> usize {
+        self.numero_de_jugadores
+    }
+
+    pub fn tirar_carta(&mut self, posicion: usize, carta: Option<Carta>) {
+        let index = match self.cartas[posicion].iter().position(|c| c.is_none()) {
+            Some(i) => i,
+            None => return,
+        };
+        self.cartas[posicion][index] = carta;
+    }
+
+    pub fn ronda_en_juego(&self) -> usize {
+        self.ronda_en_juego
+    }
+
+    pub fn posicion_de_mano(&self) -> usize {
+        self.posicion_de_mano
+    }
+
+    pub fn cartas(&self) -> &Vec<[Option<Carta>; 3]> {
+        &self.cartas
+    }
 }
 
 impl Display for Mesa {
@@ -134,13 +158,13 @@ impl Display for Mesa {
                 .cartas
                 .iter()
                 .filter(|&c| c[i].is_some())
-                .map(|c| c[i].unwrap().valor_juego)
+                .map(|c| c[i].unwrap().valor_juego())
                 .max();
             for cartas in &self.cartas {
                 match cartas[i] {
                     Some(c) => {
                         let mut prt = format!("{}", c).white();
-                        if Some(c.valor_juego) == max_val {
+                        if Some(c.valor_juego()) == max_val {
                             prt = prt.green();
                         }
                         write!(f, " {}", prt)

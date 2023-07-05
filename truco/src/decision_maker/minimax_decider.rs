@@ -52,22 +52,22 @@ enum Primera {
 
 impl Decider for MinimaxDecider {
     fn decide(&mut self, jugador: &Avatar, mesa: &Mesa) -> Decision {
-        if mesa.ronda_en_juego == 0 {
-            self.aux = if jugador.posicion == mesa.posicion_de_mano {
+        if mesa.ronda_en_juego() == 0 {
+            self.aux = if jugador.posicion() == mesa.posicion_de_mano() {
                 true
             } else {
                 false
             };
         }
         if self.aux {
-            let le_quedan = cuantas_le_quedan(jugador.posicion, mesa);
+            let le_quedan = cuantas_le_quedan(jugador.posicion(), mesa);
             let este_nodo = self.este_nodo(jugador, mesa);
             self.actualizar_probabilidades(*jugador, mesa.clone(), este_nodo, le_quedan);
             self.actualizar_valores_esperados(este_nodo);
             return self.pick(jugador, este_nodo);
         }
         for i in 0..3 {
-            if jugador.mano[i].is_some() {
+            if jugador.carta(i).is_some() {
                 return Decision::Tirar(i);
             }
         }
@@ -108,7 +108,7 @@ fn combinations_test() {
 
 #[test]
 fn prob_ancho() {
-    let prob = probabilidad(&[13,1,1], 3, 13..15) * 100000.0;
+    let prob = probabilidad(&[13, 1, 1], 3, 13..15) * 100000.0;
     assert_eq!(prob.trunc(), (3.0 * 100000.0 / 37.0_f32).trunc());
 }
 
@@ -125,26 +125,18 @@ fn probabilidad_que_pierda(a: u8, dado: &[u8], le_quedan: usize) -> f32 {
 }
 
 fn tirar(avatar: &mut Avatar, carta: usize, mesa: &mut Mesa) {
-    let index = match mesa.cartas[avatar.posicion]
-        .iter()
-        .position(|c| c.is_none())
-    {
-        Some(i) => i,
-        None => return,
-    };
-    mesa.cartas[avatar.posicion][index] = avatar.mano[carta].take();
+    avatar.tirar(carta, mesa);
 }
 
 fn cuantas_le_quedan(posicion: usize, mesa: &Mesa) -> usize {
-    mesa.cartas
+    mesa.cartas()
         .iter()
         .enumerate()
-        .filter(|(p, _)| *p == posicion+1%mesa.numero_de_jugadores)
+        .filter(|(p, _)| *p == posicion + 1 % mesa.numero_de_jugadores())
         .map(|(_, c)| c)
         .flatten()
         .flatten()
         .fold(3, |acc, _| acc - 1)
-
 }
 
 #[allow(dead_code)]
@@ -198,19 +190,19 @@ impl MinimaxDecider {
                         },
                         BayesianDecision::Rival(desicion) => {
                             if let Some(propia_previa) =
-                                mesa.cartas[avatar.posicion][mesa.ronda_en_juego]
+                                mesa.cartas()[avatar.posicion()][mesa.ronda_en_juego()]
                             {
-                                let propia_previa = propia_previa.valor_juego;
+                                let propia_previa = propia_previa.valor_juego();
                                 let mut cartas_vistas = Vec::new();
-                                for carta in avatar.mano {
+                                for carta in avatar.mano() {
                                     if let Some(carta) = carta {
-                                        cartas_vistas.push(carta.valor_juego);
+                                        cartas_vistas.push(carta.valor_juego());
                                     }
                                 }
-                                for mano in &mesa.cartas {
+                                for mano in mesa.cartas() {
                                     for carta in mano {
                                         if let Some(carta) = carta {
-                                            cartas_vistas.push(carta.valor_juego);
+                                            cartas_vistas.push(carta.valor_juego());
                                         }
                                     }
                                 }
@@ -251,19 +243,19 @@ impl MinimaxDecider {
                         }
                         BayesianDecision::Final(beneficio_esperado, tipo_de_final) => {
                             if let Some(propia_previa) =
-                                mesa.cartas[avatar.posicion][mesa.ronda_en_juego]
+                                mesa.cartas()[avatar.posicion()][mesa.ronda_en_juego()]
                             {
-                                let propia_previa = propia_previa.valor_juego;
+                                let propia_previa = propia_previa.valor_juego();
                                 let mut cartas_vistas = Vec::new();
-                                for carta in avatar.mano {
+                                for carta in avatar.mano() {
                                     if let Some(carta) = carta {
-                                        cartas_vistas.push(carta.valor_juego);
+                                        cartas_vistas.push(carta.valor_juego());
                                     }
                                 }
-                                for mano in &mesa.cartas {
+                                for mano in mesa.cartas() {
                                     for carta in mano {
                                         if let Some(carta) = carta {
-                                            cartas_vistas.push(carta.valor_juego);
+                                            cartas_vistas.push(carta.valor_juego());
                                         }
                                     }
                                 }
@@ -346,11 +338,11 @@ impl MinimaxDecider {
                 .map(|&(p, b)| if p > 1.0 { (prob_propia, b) } else { (p, b) })
                 .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .scan(1.0, |acc, (p, b)| {
-                    let scaled_p = if (p,b)!=(*last_p, *last_b) {
-                            *acc * p
-                        }else{
-                            *acc
-                        };
+                    let scaled_p = if (p, b) != (*last_p, *last_b) {
+                        *acc * p
+                    } else {
+                        *acc
+                    };
                     *acc -= scaled_p;
                     Some((scaled_p, b))
                 })
@@ -365,7 +357,7 @@ impl MinimaxDecider {
 
     fn pick(&self, jugador: &Avatar, _este_nodo: usize) -> Decision {
         for i in 0..3 {
-            if jugador.mano[i].is_some() {
+            if jugador.carta(i).is_some() {
                 return Decision::Tirar(i);
             }
         }
@@ -403,59 +395,61 @@ impl MinimaxDecider {
     }*/
 }
 
-fn known_cards(avatar: &Avatar, mesa: &Mesa) -> Vec<u8>{ 
+fn known_cards(avatar: &Avatar, mesa: &Mesa) -> Vec<u8> {
     let mut ret = Vec::new();
-    for carta in avatar.mano {
+    for carta in avatar.mano() {
         if let Some(carta) = carta {
-            ret.push(carta.valor_juego);
+            ret.push(carta.valor_juego());
         }
     }
-    for mano in &mesa.cartas {
+    for mano in mesa.cartas() {
         for carta in mano {
             if let Some(carta) = carta {
-                ret.push(carta.valor_juego);
+                ret.push(carta.valor_juego());
             }
         }
     }
     ret
 }
 
-fn probabilida_ajustada_rival(propia_previa: u8, cartas_vistas: Vec<u8>, desicion: AbtractDecision, le_quedan: usize) -> f32 {
+fn probabilida_ajustada_rival(
+    propia_previa: u8,
+    cartas_vistas: Vec<u8>,
+    desicion: AbtractDecision,
+    le_quedan: usize,
+) -> f32 {
     match desicion {
         AbtractDecision::Matar(_) => {
-            let new_prob = probabilidad_que_me_gane(
-                propia_previa,
-                &cartas_vistas,
-                le_quedan,
-            );
+            let new_prob = probabilidad_que_me_gane(propia_previa, &cartas_vistas, le_quedan);
             return new_prob;
         }
         AbtractDecision::Pardar(_) => {
-            let new_prob = probabilidad_que_me_emparde(
-                propia_previa,
-                &cartas_vistas,
-                le_quedan,
-            );
+            let new_prob = probabilidad_que_me_emparde(propia_previa, &cartas_vistas, le_quedan);
             return new_prob;
-
         }
         AbtractDecision::Pasar(_) => {
-            let new_prob = probabilidad_que_pierda(
-                propia_previa,
-                &cartas_vistas,
-                le_quedan,
-            );
+            let new_prob = probabilidad_que_pierda(propia_previa, &cartas_vistas, le_quedan);
             return new_prob;
         }
     }
 }
 
 trait ExpectedValue {
-    fn update_expected_value(&mut self, desicion_tree: &Arena<DesicionNode>, avatar: Avatar, mesa: Mesa);
+    fn update_expected_value(
+        &mut self,
+        desicion_tree: &Arena<DesicionNode>,
+        avatar: Avatar,
+        mesa: Mesa,
+    );
 }
 
 impl ExpectedValue for Node<DesicionNode> {
-    fn update_expected_value(&mut self, desicion_tree: &Arena<DesicionNode>, avatar: Avatar, mesa: Mesa) {
+    fn update_expected_value(
+        &mut self,
+        desicion_tree: &Arena<DesicionNode>,
+        avatar: Avatar,
+        mesa: Mesa,
+    ) {
         let mut evaluations = Vec::new();
         for &child in &self.children_ids {
             let node = desicion_tree.get_node_arc(child).unwrap();
@@ -468,33 +462,32 @@ impl ExpectedValue for Node<DesicionNode> {
             _ => false,
         };
         let _knowns = known_cards(&avatar, &mesa);
-        evaluations
-            .iter()
-            .sorted_by(|a,b| {
-                let (a,b) = if minimizing {
-                    (a.beneficio_esperado, b.beneficio_esperado)
-                } else {
-                    (b.beneficio_esperado, a.beneficio_esperado)
-                };
-                a.partial_cmp(&b).unwrap()
-            })
-            .map(|n| {
-                match n.desicion {
-                    BayesianDecision::Rival(_) => {
-                        let propia_previa = match self.payload.desicion {
-                            BayesianDecision::Propia(desicion) => {
-                                match desicion {
-                                    matchdesicionDecision::Tirar
-                                    Decision::Tirar()
-                                }
+        evaluations.iter().sorted_by(|a, b| {
+            let (a, b) = if minimizing {
+                (a.beneficio_esperado, b.beneficio_esperado)
+            } else {
+                (b.beneficio_esperado, a.beneficio_esperado)
+            };
+            a.partial_cmp(&b).unwrap()
+        });
+        /*
+        .map(|n| {
+            match n.desicion {
+                BayesianDecision::Rival(_) => {
+                    let propia_previa = match self.payload.desicion {
+                        BayesianDecision::Propia(desicion) => {
+                            match desicion {
+                                matchdesicionDecision::Tirar
+                                Decision::Tirar()
                             }
-                        };
-                        probabilida_ajustada_rival(, cartas_vistas, desicion, le_quedan);
-                    },
-                    BayesianDecision::Final(_, _) => {},
-                    _ => {}
-                }
-            });
+                        }
+                    };
+                    probabilida_ajustada_rival(, cartas_vistas, desicion, le_quedan);
+                },
+                BayesianDecision::Final(_, _) => {},
+                _ => {}
+            }
+        });*/
     }
 }
 

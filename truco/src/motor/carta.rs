@@ -25,10 +25,10 @@ pub enum Numero {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Carta {
-    pub(super) palo: Palo,
+    palo: Palo,
     numero: Numero,
-    pub valor_tantos: u8,
-    pub valor_juego: u8,
+    valor_tantos: u8,
+    valor_juego: u8,
 }
 
 fn valor_juego(numero: Numero, palo: Palo) -> u8 {
@@ -73,6 +73,18 @@ impl Carta {
             valor_juego: valor,
             valor_tantos: tantos,
         }
+    }
+
+    pub fn valor_tantos(&self) -> u8 {
+        self.valor_tantos
+    }
+
+    pub fn valor_juego(&self) -> u8 {
+        self.valor_juego
+    }
+
+    pub fn palo(&self) -> Palo {
+        self.palo
     }
 }
 

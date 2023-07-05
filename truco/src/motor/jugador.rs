@@ -7,14 +7,14 @@ use crate::motor::mesa::Mesa;
 
 #[derive(Debug)]
 pub struct Jugador<DecisionMaker: Decider + ?Sized> {
-    pub(crate) avatar: Avatar,
+    avatar: Avatar,
     decision_maker: Box<DecisionMaker>,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Avatar {
-    pub(crate) mano: [Option<Carta>; 3],
-    pub(crate) posicion: usize,
+    mano: [Option<Carta>; 3],
+    posicion: usize,
 }
 
 #[derive(Debug, Eq)]
@@ -66,19 +66,19 @@ impl<DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
         let e: Result<(), ()> = Ok(());
         for carta in &mano {
             ret.push(Envido {
-                tantos: carta.valor_tantos,
-                valor_revelado: carta.valor_juego,
+                tantos: carta.valor_tantos(),
+                valor_revelado: carta.valor_juego(),
             });
         }
         for par in mano.iter().combinations(2) {
-            if par[0].palo != par[1].palo {
+            if par[0].palo() != par[1].palo() {
                 continue;
             }
             let mut tanto = 20;
             let mut valor = 0;
             for &carta in par {
-                tanto += carta.valor_tantos;
-                valor += carta.valor_juego;
+                tanto += carta.valor_tantos();
+                valor += carta.valor_juego();
             }
             ret.push(Envido {
                 tantos: tanto,
@@ -89,15 +89,8 @@ impl<DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
         ret
     }
 
-     fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
-        let index = match mesa.cartas[self.avatar.posicion]
-            .iter()
-            .position(|c| c.is_none())
-        {
-            Some(i) => i,
-            None => return,
-        };
-        mesa.cartas[self.avatar.posicion][index] = self.avatar.mano[carta].take();
+    fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
+        mesa.tirar_carta(self.avatar.posicion, self.avatar.mano[carta].take());
     }
 
     pub fn turno(&mut self, mesa: &mut Mesa) {
@@ -111,11 +104,45 @@ impl<DecisionMaker: Decider + ?Sized> Jugador<DecisionMaker> {
             }
         }
     }
+
+    pub fn dar_mano(&mut self, mano: [Option<Carta>; 3]) {
+        self.avatar.mano = mano;
+    }
+
+    pub fn carta(&self, indice: usize) -> Option<Carta> {
+        self.avatar.carta(indice)
+    }
+
+    pub fn posicion(&self) -> usize {
+        self.avatar.posicion()
+    }
+
+    pub fn mano(&self) -> [Option<Carta>; 3] {
+        self.avatar.mano()
+    }
 }
 
 impl<DecisionMaker: Decider> Display for Jugador<DecisionMaker> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.avatar)
+    }
+}
+
+impl Avatar {
+    pub fn carta(&self, indice: usize) -> Option<Carta> {
+        self.mano[indice]
+    }
+
+    pub fn posicion(&self) -> usize {
+        self.posicion
+    }
+
+    pub fn mano(&self) -> [Option<Carta>; 3] {
+        self.mano
+    }
+
+    pub fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
+        mesa.tirar_carta(self.posicion, self.mano[carta].take());
     }
 }
 

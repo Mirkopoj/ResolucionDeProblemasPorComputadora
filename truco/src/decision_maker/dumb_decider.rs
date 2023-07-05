@@ -8,7 +8,7 @@ pub struct DumbDecider;
 impl Decider for DumbDecider {
     fn decide(&mut self, jugador: &Avatar, _: &Mesa) -> Decision {
         for i in 0..3 {
-            if jugador.mano[i].is_some() {
+            if jugador.carta(i).is_some() {
                 return Decision::Tirar(i);
             }
         }
