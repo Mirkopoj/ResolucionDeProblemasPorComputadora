@@ -8,7 +8,6 @@ fn main() {
     let mut mesa = Mesa::new(6);
 
     for _ in 0..15 {
-
         mazo.mezclar();
         let mut jugadores = mazo.repartir(&mesa);
 
