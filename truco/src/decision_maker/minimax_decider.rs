@@ -420,6 +420,36 @@ fn known_cards(avatar: &Avatar, mesa: &Mesa) -> Vec<u8>{
     ret
 }
 
+fn probabilida_ajustada_rival(propia_previa: u8, cartas_vistas: Vec<u8>, desicion: AbtractDecision, le_quedan: usize) -> f32 {
+    match desicion {
+        AbtractDecision::Matar(_) => {
+            let new_prob = probabilidad_que_me_gane(
+                propia_previa,
+                &cartas_vistas,
+                le_quedan,
+            );
+            return new_prob;
+        }
+        AbtractDecision::Pardar(_) => {
+            let new_prob = probabilidad_que_me_emparde(
+                propia_previa,
+                &cartas_vistas,
+                le_quedan,
+            );
+            return new_prob;
+
+        }
+        AbtractDecision::Pasar(_) => {
+            let new_prob = probabilidad_que_pierda(
+                propia_previa,
+                &cartas_vistas,
+                le_quedan,
+            );
+            return new_prob;
+        }
+    }
+}
+
 trait ExpectedValue {
     fn update_expected_value(&mut self, desicion_tree: &Arena<DesicionNode>, avatar: Avatar, mesa: Mesa);
 }
@@ -447,6 +477,23 @@ impl ExpectedValue for Node<DesicionNode> {
                     (b.beneficio_esperado, a.beneficio_esperado)
                 };
                 a.partial_cmp(&b).unwrap()
+            })
+            .map(|n| {
+                match n.desicion {
+                    BayesianDecision::Rival(_) => {
+                        let propia_previa = match self.payload.desicion {
+                            BayesianDecision::Propia(desicion) => {
+                                match desicion {
+                                    matchdesicionDecision::Tirar
+                                    Decision::Tirar()
+                                }
+                            }
+                        };
+                        probabilida_ajustada_rival(, cartas_vistas, desicion, le_quedan);
+                    },
+                    BayesianDecision::Final(_, _) => {},
+                    _ => {}
+                }
             });
     }
 }
