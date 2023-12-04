@@ -48,21 +48,22 @@ async fn lobby(mut socket: TcpStream, tables: Arc<Mutex<Tables>>) {
         }
         let command_name = &commands[0];
         println!("command: {commands:?}");
-        let answer =
-            if let Some(command) = COMMANDS.iter().find(|command| &command.name == command_name) {
-                let (sock_op, string) = (command.run)(commands, socket, tables.clone());
-                if let Some(sock) = sock_op {
-                    socket = sock;
-                } else {
-                    break;
-                }
-                string
+        let answer = if let Some(command) = COMMANDS
+            .iter()
+            .find(|command| &command.name == command_name)
+        {
+            let (sock_op, string) = (command.run)(commands, socket, tables.clone());
+            if let Some(sock) = sock_op {
+                socket = sock;
             } else {
-                format!("ERROR: command {command_name} is not found\n")
-            };
+                break;
+            }
+            string
+        } else {
+            format!("ERROR: command {command_name} is not found\n")
+        };
         socket.write_all(answer.as_bytes()).await.unwrap();
     }
-    println!("{:#}", tables.lock().unwrap());
 }
 
 type CommandRet = (Option<TcpStream>, String);
@@ -116,7 +117,10 @@ fn help(commands: Vec<&str>, s: TcpStream, _: Arc<Mutex<Tables>>) -> CommandRet 
     }
     let mut ret = String::new();
     for command_name in commands[1..].iter() {
-        if let Some(command) = COMMANDS.iter().find(|command| &command.name == command_name) {
+        if let Some(command) = COMMANDS
+            .iter()
+            .find(|command| &command.name == command_name)
+        {
             ret.push_str(&format!("{}\n", command));
             continue;
         }
@@ -179,6 +183,9 @@ fn join_table(args: Vec<&str>, socket: TcpStream, tables: Arc<Mutex<Tables>>) ->
     let mut tables = tables.lock().unwrap();
     for i in 0..tables.len() {
         if tables[i].name == name {
+            if as_player && tables[i].players_num() >= tables[i].chairs as usize {
+                return (sock_op, "ERROR: table allready full\n".to_string());
+            }
             tables[i].join(sock_op.take().unwrap(), as_player);
             success = true;
             break;
@@ -210,60 +217,76 @@ impl Chairs {
     }
 }
 
-//Cambiar los vecs por un channel, para mandar los streams a un thread creado cuando se crea la mesa.
 #[derive(Debug)]
 struct Table {
     name: String,
-    players: Vec<TcpStream>,
+    players: Arc<Mutex<usize>>,
     chairs: Chairs,
-    observers: Vec<TcpStream>,
+    observers: Arc<Mutex<usize>>,
     tx: Sender<(TcpStream, bool)>,
 }
 
 impl Table {
     fn new(name: String, chairs: Chairs) -> Self {
         let (tx, rx) = channel(16);
-        tokio::spawn(async move { table_thread(rx).await });
+        let players = Arc::new(Mutex::new(0));
+        let players_clone = players.clone();
+        let observers = Arc::new(Mutex::new(0));
+        let observers_clone = observers.clone();
+        let name_clone = name.clone();
+        tokio::spawn(async move {
+            table_thread(
+                rx,
+                players_clone,
+                observers_clone,
+                chairs as usize,
+                name_clone,
+            )
+            .await
+        });
         Self {
             name,
-            players: Vec::new(),
+            players,
             chairs,
-            observers: Vec::new(),
+            observers,
             tx,
         }
     }
 
     fn join(&mut self, stream: TcpStream, as_player: bool) {
-        let add_to = if as_player {
-            if self.chairs as usize <= self.players.len() {
-                return;
-            }
-            &mut self.players
-        } else {
-            &mut self.observers
-        };
-        add_to.push(stream);
+        let tx = self.tx.clone();
+        tokio::spawn(async move { tx.send((stream, as_player)).await });
     }
-    
+
     fn players_num(&self) -> usize {
-        self.players.len()
+        *self.players.lock().unwrap()
     }
 
     fn observers_num(&self) -> usize {
-        self.observers.len()
+        *self.observers.lock().unwrap()
     }
-
 }
 
-async fn table_thread(mut rx: Receiver<(TcpStream, bool)>) {
+async fn table_thread(
+    mut rx: Receiver<(TcpStream, bool)>,
+    player_count: Arc<Mutex<usize>>,
+    observer_count: Arc<Mutex<usize>>,
+    chairs: usize,
+    name: String,
+) {
     let mut players = Vec::new();
     let mut observers = Vec::new();
     loop {
         let (stream, as_player) = rx.recv().await.unwrap();
         if as_player {
             players.push(stream);
+            *player_count.lock().unwrap() = players.len();
+            if players.len() == chairs {
+                println!("Table {name}: Begining game");
+            }
         } else {
             observers.push(stream);
+            *observer_count.lock().unwrap() = observers.len();
         }
     }
 }
@@ -322,9 +345,9 @@ impl Display for Tables {
                     f,
                     "{} {} {} {}\n",
                     table.name,
-                    table.players.len(),
+                    table.players_num(),
                     table.chairs as u8,
-                    table.observers.len()
+                    table.observers_num(),
                 )?;
             }
             write!(f, "")
