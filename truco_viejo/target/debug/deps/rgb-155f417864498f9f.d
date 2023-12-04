@@ -1,0 +1,13 @@
+/home/mirko/SSD/UNRN/Electronica/Optativas/ResolucionDeProblemasPorComputadora/truco/target/debug/deps/rgb-155f417864498f9f.rmeta: /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/lib.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/mod.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/array.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/tuple.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/ops.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/pixel.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/rgb.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/rgba.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/alt.rs
+
+/home/mirko/SSD/UNRN/Electronica/Optativas/ResolucionDeProblemasPorComputadora/truco/target/debug/deps/rgb-155f417864498f9f.d: /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/lib.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/mod.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/array.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/tuple.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/ops.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/pixel.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/rgb.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/rgba.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/alt.rs
+
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/lib.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/mod.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/array.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/convert/tuple.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/ops.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/pixel.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/rgb.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/internal/rgba.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/rgb-0.8.36/src/alt.rs:

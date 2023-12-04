@@ -1,0 +1,13 @@
+[package]
+name = "truco"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+colored = "2.0.0"
+enum-iterator = "1.4.1"
+itertools = "0.10.5"
+r3bl_rs_utils = "0.9.7"
+rand = "0.8.5"

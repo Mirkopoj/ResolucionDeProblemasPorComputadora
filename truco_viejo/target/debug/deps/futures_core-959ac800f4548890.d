@@ -1,0 +1,11 @@
+/home/mirko/SSD/UNRN/Electronica/Optativas/ResolucionDeProblemasPorComputadora/truco/target/debug/deps/futures_core-959ac800f4548890.rmeta: /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/lib.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/future.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/stream.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/mod.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/poll.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/__internal/mod.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/__internal/atomic_waker.rs
+
+/home/mirko/SSD/UNRN/Electronica/Optativas/ResolucionDeProblemasPorComputadora/truco/target/debug/deps/futures_core-959ac800f4548890.d: /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/lib.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/future.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/stream.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/mod.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/poll.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/__internal/mod.rs /home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/__internal/atomic_waker.rs
+
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/lib.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/future.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/stream.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/mod.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/poll.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/__internal/mod.rs:
+/home/mirko/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.28/src/task/__internal/atomic_waker.rs:
