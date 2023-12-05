@@ -2,3 +2,6 @@ C1c-proyectos/
 */bin/
 */obj/
 truco/target/
+truco_viejo/target/
+.jikit/
+*/.jikit/
