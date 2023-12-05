@@ -1,12 +1,14 @@
 use std::fmt::Display;
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncWriteExt, ErrorKind};
-use tokio::net::tcp::OwnedReadHalf;
+use tokio::io::AsyncWriteExt;
+use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::task::JoinHandle;
 
 use crate::game_commands::GAME_COMMANDS;
+use crate::streams::*;
 
 /*use crate::motor::contador::Contador;
 use crate::motor::jugador::Jugador;
@@ -109,76 +111,35 @@ async fn table_thread(
     loop {
         tokio::select! {
 
-            Some((mut stream, as_player)) = join_requests.recv() => {
-                if as_player {
-                    stream.write_all(b"Enter your name\n").await.unwrap();
-                    let (reader, writer) = stream.into_split();
-                    let tx = name_tx.clone();
-                    let mut count = player_count.lock().unwrap();
-                    let id = *count;
-                    let (name_feedback_tx, name_feedback_rx) = channel(16);
-                    let join_handle = tokio::spawn(async move { naming_stream(id, reader, tx, name_feedback_rx).await });
-                    unnamed_players.push((id, writer, name_feedback_tx, join_handle));
-                    *count = players.len() + unnamed_players.len();
-                } else {
-                    observers.push(stream);
-                    *observer_count.lock().unwrap() = observers.len();
-                }
+            Some(join_data) = join_requests.recv() => {
+                joining_routine(
+                    join_data,
+                    &name_tx,
+                    player_count.clone(),
+                    observer_count.clone(),
+                    &mut unnamed_players,
+                    &players,
+                    &mut observers
+                ).await;
             },
 
-            Some((id, player_name)) = name_rx.recv() => {
-                if let Some(index) = unnamed_players.iter().position(|(x, _, _, _)| *x == id){
-
-                    if players
-                        .iter()
-                        .find(|(name, _)| name == &player_name)
-                        .is_none()
-                    {
-                        let (_, stream, naming_tx, join_handle) = unnamed_players.remove(id);
-                        naming_tx.send(true).await.unwrap();
-                        players.push((player_name.clone(), stream));
-                        let reader = join_handle.await.unwrap();
-                        let tx = tx.clone();
-                        let name_clone = player_name.clone();
-                        tokio::spawn(async move { game_stream(name_clone, reader, tx).await });
-                        if players.len() == chairs {
-                            println!("Table {name}: Begining game");
-                        }
-                    } else {
-                        let (_, stream,  tx, _) = unnamed_players.get_mut(index).unwrap();
-                        stream.write_all(b"Name allready taken\n").await.unwrap();
-                        tx.send(false).await.unwrap();
-                    }
-                }
+            Some(naming_data) = name_rx.recv() => {
+                naming_routine(
+                    naming_data,
+                    &mut unnamed_players,
+                    &mut players,
+                    tx.clone(),
+                    chairs,
+                    &name
+                ).await;
             },
 
-            Some((name, commands)) = rx.recv() => {
-                let command_name = &commands[0];
-                println!("command: {commands:?}");
-                let (route, answer) = if let Some(command) = GAME_COMMANDS
-                    .iter()
-                    .find(|command| command.name() == command_name)
-                {
-                    command.run(name, commands)
-                } else {
-                    (Routing::Single(name), format!("ERROR: command {command_name} is not found\n"))
-                };
-                for (player_name, socket) in &mut players {
-                    match &route {
-                        Routing::Single(routing_name) => {
-                            if player_name == routing_name {
-                                socket.write_all(answer.as_bytes()).await.unwrap();
-                                break;
-                            }
-                        },
-                        Routing::BroadCast => {
-                            socket.write_all(answer.as_bytes()).await.unwrap();
-                        }
-                    }
-                }
-                for socket in &mut observers {
-                    socket.write_all(answer.as_bytes()).await.unwrap();
-                }
+            Some(game_command_data) = rx.recv() => {
+                game_command_routine(
+                    game_command_data,
+                    &mut players,
+                    &mut observers
+                ).await;
             },
         };
     }
@@ -217,59 +178,107 @@ async fn table_thread(
     println!("Ganador {}", contador.ganador());*/
 }
 
-async fn game_stream(name: String, reader: OwnedReadHalf, tx: Sender<(String, Vec<String>)>) {
-    loop {
-        let mut buffer = [0; 1024];
-        reader.readable().await.unwrap();
-        let n_bytes = match reader.try_read(&mut buffer) {
-            Ok(n) => n,
-            Err(e) => {
-                if e.kind() == ErrorKind::WouldBlock {
-                    continue;
-                }
-                0
-            }
-        };
-        let commands = String::from_utf8_lossy(&buffer[0..n_bytes]);
-        let commands = commands
-            .split_whitespace()
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-        if commands.len() == 0 {
-            continue;
-        }
-        tx.send((name.clone(), commands)).await.unwrap();
+async fn joining_routine(
+    (mut stream, as_player): (TcpStream, bool),
+    name_tx: &Sender<(usize, String)>,
+    player_count: Arc<Mutex<usize>>,
+    observer_count: Arc<Mutex<usize>>,
+    unnamed_players: &mut Vec<(
+        usize,
+        OwnedWriteHalf,
+        Sender<bool>,
+        JoinHandle<OwnedReadHalf>,
+    )>,
+    players: &Vec<(String, OwnedWriteHalf)>,
+    observers: &mut Vec<TcpStream>,
+) {
+    if as_player {
+        stream.write_all(b"Enter your name\n").await.unwrap();
+        let (reader, writer) = stream.into_split();
+        let tx = name_tx.clone();
+        let mut count = player_count.lock().unwrap();
+        let id = *count;
+        let (name_feedback_tx, name_feedback_rx) = channel(16);
+        let join_handle =
+            tokio::spawn(async move { naming_stream(id, reader, tx, name_feedback_rx).await });
+        unnamed_players.push((id, writer, name_feedback_tx, join_handle));
+        *count = players.len() + unnamed_players.len();
+    } else {
+        observers.push(stream);
+        *observer_count.lock().unwrap() = observers.len();
     }
 }
 
-async fn naming_stream(
-    id: usize,
-    reader: OwnedReadHalf,
-    tx: Sender<(usize, String)>,
-    mut rx: Receiver<bool>,
-) -> OwnedReadHalf {
-    loop {
-        let mut buffer = [0; 1024];
-        reader.readable().await.unwrap();
-        let n_bytes = match reader.try_read(&mut buffer) {
-            Ok(n) => n,
-            Err(e) => {
-                if e.kind() == ErrorKind::WouldBlock {
-                    continue;
-                }
-                0
+async fn naming_routine(
+    (id, player_name): (usize, String),
+    unnamed_players: &mut Vec<(
+        usize,
+        OwnedWriteHalf,
+        Sender<bool>,
+        JoinHandle<OwnedReadHalf>,
+    )>,
+    players: &mut Vec<(String, OwnedWriteHalf)>,
+    tx: Sender<(String, Vec<String>)>,
+    chairs: usize,
+    name: &String,
+) {
+    if let Some(index) = unnamed_players.iter().position(|(x, _, _, _)| *x == id) {
+        if players
+            .iter()
+            .find(|(name, _)| name == &player_name)
+            .is_none()
+        {
+            let (_, stream, naming_tx, join_handle) = unnamed_players.remove(id);
+            naming_tx.send(true).await.unwrap();
+            players.push((player_name.clone(), stream));
+            let reader = join_handle.await.unwrap();
+            let name_clone = player_name.clone();
+            tokio::spawn(async move { game_stream(name_clone, reader, tx).await });
+            if players.len() == chairs {
+                println!("Table {name}: Begining game");
             }
-        };
-        let name = String::from_utf8_lossy(&buffer[0..n_bytes])
-            .to_string()
-            .split_whitespace()
-            .collect();
-        tx.send((id, name)).await.unwrap();
-        if rx.recv().await.unwrap() {
-            break;
+        } else {
+            let (_, stream, tx, _) = unnamed_players.get_mut(index).unwrap();
+            stream.write_all(b"Name allready taken\n").await.unwrap();
+            tx.send(false).await.unwrap();
         }
     }
-    reader
+}
+
+async fn game_command_routine(
+    (name, commands): (String, Vec<String>),
+    players: &mut Vec<(String, OwnedWriteHalf)>,
+    observers: &mut Vec<TcpStream>,
+) {
+    let command_name = &commands[0];
+    println!("command: {commands:?}");
+    let (route, answer) = if let Some(command) = GAME_COMMANDS
+        .iter()
+        .find(|command| command.name() == command_name)
+    {
+        command.run(name, commands)
+    } else {
+        (
+            Routing::Single(name),
+            format!("ERROR: command {command_name} is not found\n"),
+        )
+    };
+    for (player_name, socket) in players {
+        match &route {
+            Routing::Single(routing_name) => {
+                if player_name == routing_name {
+                    socket.write_all(answer.as_bytes()).await.unwrap();
+                    break;
+                }
+            }
+            Routing::BroadCast => {
+                socket.write_all(answer.as_bytes()).await.unwrap();
+            }
+        }
+    }
+    for socket in observers {
+        socket.write_all(answer.as_bytes()).await.unwrap();
+    }
 }
 
 impl Display for Table {
