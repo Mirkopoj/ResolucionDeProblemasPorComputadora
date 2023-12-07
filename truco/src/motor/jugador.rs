@@ -5,6 +5,8 @@ use itertools::Itertools;
 use crate::motor::carta::Carta;
 use crate::motor::mesa::Mesa;
 
+use super::mesa::Equipo;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Jugador {
     mano: [Option<Carta>; 3],
@@ -79,11 +81,8 @@ impl Jugador {
         ret
     }
 
-    fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
+    pub fn tirar(&mut self, carta: usize, mesa: &mut Mesa) {
         mesa.tirar_carta(self.posicion, self.mano[carta].take());
-    }
-
-    pub fn turno(&mut self, mesa: &mut Mesa) {
     }
 
     pub fn dar_mano(&mut self, mano: [Option<Carta>; 3]) {
@@ -94,12 +93,20 @@ impl Jugador {
         self.mano[indice]
     }
 
+    pub fn mano(&self) -> [Option<Carta>; 3] {
+        self.mano
+    }
+
     pub fn posicion(&self) -> usize {
         self.posicion
     }
 
-    pub fn mano(&self) -> [Option<Carta>; 3] {
-        self.mano
+    pub fn equipo(&self) -> Equipo {
+        if self.posicion % 2 == 0 {
+            Equipo::Nosotros
+        } else {
+            Equipo::Ellos
+        }
     }
 }
 
@@ -111,6 +118,6 @@ impl Display for Jugador {
                 None => write!(f, "    "),
             }?;
         }
-        writeln!(f, "")
+        write!(f, "")
     }
 }

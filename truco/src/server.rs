@@ -16,6 +16,8 @@ mod game_commands;
 
 mod streams;
 
+mod game_logic;
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = "Sever for hosting a Truco game")]
 struct Cli {

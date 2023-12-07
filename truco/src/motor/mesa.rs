@@ -10,6 +10,7 @@ pub struct Mesa {
     ronda_en_juego: usize,
     posicion_de_mano: usize,
     cuenta_vueltas: usize,
+    posicion_del_turno: usize,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -28,7 +29,12 @@ impl Mesa {
             ronda_en_juego: 0,
             posicion_de_mano: 0,
             cuenta_vueltas: 0,
+            posicion_del_turno: 0,
         }
+    }
+
+    pub fn ronda_finalizada(&self) -> bool {
+        self.cartas.iter().all(|x| x[self.ronda_en_juego].is_some())
     }
 
     pub fn final_de_ronda(&mut self) {
@@ -63,6 +69,7 @@ impl Mesa {
             return;
         }
         self.posicion_de_mano = max_index;
+        self.posicion_del_turno = max_index;
         if max_nosotros > max_ellos {
             self.rondas.push(Some(Equipo::Nosotros));
         } else {
@@ -116,6 +123,7 @@ impl Mesa {
         self.rondas = Vec::new();
         self.cuenta_vueltas += 1;
         self.posicion_de_mano = self.cuenta_vueltas % self.numero_de_jugadores;
+        self.posicion_del_turno = self.posicion_de_mano;
         self.cartas = (0..self.numero_de_jugadores).map(|_| [None; 3]).collect();
     }
 
@@ -135,6 +143,8 @@ impl Mesa {
             None => return,
         };
         self.cartas[posicion][index] = carta;
+        self.posicion_del_turno += 1;
+        self.posicion_del_turno %= self.numero_de_jugadores;
     }
 
     pub fn ronda_en_juego(&self) -> usize {
@@ -147,6 +157,10 @@ impl Mesa {
 
     pub fn cartas(&self) -> &Vec<[Option<Carta>; 3]> {
         &self.cartas
+    }
+
+    pub fn posicion_del_turno(&self) -> usize {
+        self.posicion_del_turno
     }
 }
 

@@ -28,7 +28,7 @@ impl Command {
 
 impl Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:<6} - {}", self.name, self.description)
+        write!(f, "{:<6}\t\t{}", self.name, self.description)
     }
 }
 
@@ -113,8 +113,9 @@ fn new_table(args: Vec<&str>, socket: TcpStream, tables: Arc<Mutex<Tables>>) -> 
             "ERROR: table name allready taken\n".to_string(),
         );
     }
+    let tables_arc = tables.clone();
     let mut tables = tables.lock().unwrap();
-    tables.push(Table::new(name, chairs.unwrap()));
+    tables.push(Table::new(name, chairs.unwrap(), tables_arc));
     let last = tables.len() - 1;
     tables[last].join(socket, as_player);
     (None, "SUCCESS\n".to_string())

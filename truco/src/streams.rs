@@ -2,7 +2,7 @@ use tokio::sync::mpsc::{Sender, Receiver};
 
 use tokio::{io::ErrorKind, net::tcp::OwnedReadHalf};
 
-pub async fn game_stream(name: String, reader: OwnedReadHalf, tx: Sender<(String, Vec<String>)>) {
+pub async fn game_stream(name: String, reader: OwnedReadHalf, tx: Sender<(String, Vec<String>)>) -> OwnedReadHalf {
     loop {
         let mut buffer = [0; 1024];
         reader.readable().await.unwrap();
@@ -23,8 +23,11 @@ pub async fn game_stream(name: String, reader: OwnedReadHalf, tx: Sender<(String
         if commands.len() == 0 {
             continue;
         }
-        tx.send((name.clone(), commands)).await.unwrap();
+        if tx.send((name.clone(), commands)).await.is_err() {
+            break;
+        }
     }
+    reader
 }
 
 pub async fn naming_stream(

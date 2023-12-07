@@ -25,9 +25,9 @@ impl Mazo {
         self.cartas.shuffle(&mut rng);
     }
 
-    pub fn repartir(&self, jugadores: &mut Vec<Jugador>) {
+    pub fn repartir(&self, jugadores: Vec<&mut Jugador>) {
         let numero_de_jugadores = jugadores.len();
-        for (numero_de_jugador, mut jugador) in enumerate(jugadores) {
+        for (numero_de_jugador, jugador) in enumerate(jugadores) {
             jugador.dar_mano([
                 Some(self.cartas[numero_de_jugador]),
                 Some(self.cartas[numero_de_jugador + numero_de_jugadores]),

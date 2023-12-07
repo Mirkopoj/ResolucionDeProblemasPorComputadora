@@ -7,13 +7,9 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::task::JoinHandle;
 
-use crate::game_commands::GAME_COMMANDS;
-use crate::streams::*;
-
-/*use crate::motor::contador::Contador;
-use crate::motor::jugador::Jugador;
-use crate::motor::mazo::Mazo;
-use crate::motor::mesa::Mesa;*/
+use crate::game_commands::{GAME_COMMANDS, STATIC_COMMANDS};
+use crate::game_logic::GameLogic;
+use crate::{lobby, streams::*};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Chairs {
@@ -43,7 +39,7 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn new(name: String, chairs: Chairs) -> Self {
+    pub fn new(name: String, chairs: Chairs, tables: Arc<Mutex<Tables>>) -> Self {
         let (tx, rx) = channel(16);
         let players = Arc::new(Mutex::new(0));
         let players_clone = players.clone();
@@ -57,6 +53,7 @@ impl Table {
                 observers_clone,
                 chairs as usize,
                 name_clone,
+                tables,
             )
             .await
         });
@@ -102,13 +99,17 @@ async fn table_thread(
     observer_count: Arc<Mutex<usize>>,
     chairs: usize,
     name: String,
+    tables: Arc<Mutex<Tables>>,
 ) {
-    let mut players = Vec::with_capacity(chairs as usize);
-    let mut unnamed_players = Vec::with_capacity(chairs as usize);
+    let mut unnamed_players = Vec::with_capacity(chairs);
     let mut observers = Vec::new();
     let (name_tx, mut name_rx) = channel(16);
     let (tx, mut rx) = channel(16);
+    let mut game_logic = GameLogic::new(name.clone(), chairs, false);
     loop {
+        if game_logic.game_over() {
+            break;
+        }
         tokio::select! {
 
             Some(join_data) = join_requests.recv() => {
@@ -118,7 +119,7 @@ async fn table_thread(
                     player_count.clone(),
                     observer_count.clone(),
                     &mut unnamed_players,
-                    &players,
+                    &game_logic,
                     &mut observers
                 ).await;
             },
@@ -127,55 +128,39 @@ async fn table_thread(
                 naming_routine(
                     naming_data,
                     &mut unnamed_players,
-                    &mut players,
+                    &mut game_logic,
                     tx.clone(),
-                    chairs,
-                    &name
                 ).await;
             },
 
             Some(game_command_data) = rx.recv() => {
                 game_command_routine(
                     game_command_data,
-                    &mut players,
-                    &mut observers
+                    &mut observers,
+                    &mut game_logic,
                 ).await;
             },
         };
     }
-    /*
-    let mut mazo = Mazo::new();
-    let mut mesa = Mesa::new(chairs);
-    let mut contador = Contador::new(false);
-    let mut jugadores: Vec<Jugador> = Vec::new();
-    for i in 0..chairs {
-        jugadores.push(Jugador::new(i));
+    for stream in game_logic.streams().into_iter() {
+        let table_clone = tables.clone();
+        tokio::spawn(async move {
+            let (read_half, write_half) = stream.join().await;
+            let socket = read_half.reunite(write_half).unwrap();
+            tokio::spawn(async move {
+                lobby(socket, table_clone).await;
+            });
+        });
     }
-    loop {
-        mazo.mezclar();
-        mazo.repartir(&mut jugadores);
-        println!("{}", mesa);
-        let mut ganador = None;
-        for _ in 0..3 {
-            for i in mesa.indices_de_turnos() {
-                jugadores[i].turno(&mut mesa);
-                println!("{}", mesa);
-            }
-            mesa.final_de_ronda();
-            ganador = mesa.ganador();
-            if ganador.is_some() {
-                break;
-            }
-        }
-        if contador.sumar(ganador) {
-            break;
-        }
-        println!("{}", contador);
-        mesa.siguiente();
+    for socket in observers {
+        let table_clone = tables.clone();
+        tokio::spawn(async move {
+            lobby(socket, table_clone).await;
+        });
     }
-    println!("{}", contador);
-    println!();
-    println!("Ganador {}", contador.ganador());*/
+    let mut tables = tables.lock().unwrap();
+    let index = tables.iter().position(|t| t.name() == &name).unwrap();
+    tables.remove(index);
 }
 
 async fn joining_routine(
@@ -189,7 +174,7 @@ async fn joining_routine(
         Sender<bool>,
         JoinHandle<OwnedReadHalf>,
     )>,
-    players: &Vec<(String, OwnedWriteHalf)>,
+    game_logic: &GameLogic,
     observers: &mut Vec<TcpStream>,
 ) {
     if as_player {
@@ -202,7 +187,7 @@ async fn joining_routine(
         let join_handle =
             tokio::spawn(async move { naming_stream(id, reader, tx, name_feedback_rx).await });
         unnamed_players.push((id, writer, name_feedback_tx, join_handle));
-        *count = players.len() + unnamed_players.len();
+        *count = game_logic.player_count() + unnamed_players.len();
     } else {
         observers.push(stream);
         *observer_count.lock().unwrap() = observers.len();
@@ -217,25 +202,27 @@ async fn naming_routine(
         Sender<bool>,
         JoinHandle<OwnedReadHalf>,
     )>,
-    players: &mut Vec<(String, OwnedWriteHalf)>,
+    game_logic: &mut GameLogic,
     tx: Sender<(String, Vec<String>)>,
-    chairs: usize,
-    name: &String,
 ) {
     if let Some(index) = unnamed_players.iter().position(|(x, _, _, _)| *x == id) {
-        if players
+        if game_logic
+            .players()
             .iter()
-            .find(|(name, _)| name == &player_name)
+            .find(|p| p.name() == &player_name)
             .is_none()
         {
-            let (_, stream, naming_tx, join_handle) = unnamed_players.remove(id);
+            let (_, stream, naming_tx, join_handle) = unnamed_players.remove(index);
             naming_tx.send(true).await.unwrap();
-            players.push((player_name.clone(), stream));
             let reader = join_handle.await.unwrap();
             let name_clone = player_name.clone();
-            tokio::spawn(async move { game_stream(name_clone, reader, tx).await });
-            if players.len() == chairs {
-                println!("Table {name}: Begining game");
+            let tx_clone = tx.clone();
+            let join_handle =
+                tokio::spawn(async move { game_stream(name_clone, reader, tx_clone).await });
+            if game_logic.add_player(player_name.clone(), stream, join_handle) {
+                tx.send(("  start  ".to_string(), vec!["start".to_string()]))
+                    .await
+                    .unwrap();
             }
         } else {
             let (_, stream, tx, _) = unnamed_players.get_mut(index).unwrap();
@@ -247,37 +234,39 @@ async fn naming_routine(
 
 async fn game_command_routine(
     (name, commands): (String, Vec<String>),
-    players: &mut Vec<(String, OwnedWriteHalf)>,
     observers: &mut Vec<TcpStream>,
+    game_logic: &mut GameLogic,
 ) {
     let command_name = &commands[0];
-    println!("command: {commands:?}");
-    let (route, answer) = if let Some(command) = GAME_COMMANDS
+    println!("{name}: {commands:?}");
+    for (route, answer) in if let Some(command) = GAME_COMMANDS[..STATIC_COMMANDS]
         .iter()
+        .chain(game_logic.available_game_commands(&name).into_iter())
         .find(|command| command.name() == command_name)
     {
-        command.run(name, commands)
+        command.run(name, commands, game_logic)
     } else {
-        (
+        vec![(
             Routing::Single(name),
             format!("ERROR: command {command_name} is not found\n"),
-        )
-    };
-    for (player_name, socket) in players {
-        match &route {
-            Routing::Single(routing_name) => {
-                if player_name == routing_name {
+        )]
+    } {
+        for (player_name, socket) in game_logic.players().iter_mut().map(|p| p.server_tuple()) {
+            match &route {
+                Routing::Single(routing_name) => {
+                    if player_name == routing_name {
+                        socket.write_all(answer.as_bytes()).await.unwrap();
+                        break;
+                    }
+                }
+                Routing::BroadCast => {
                     socket.write_all(answer.as_bytes()).await.unwrap();
-                    break;
                 }
             }
-            Routing::BroadCast => {
-                socket.write_all(answer.as_bytes()).await.unwrap();
-            }
         }
-    }
-    for socket in observers {
-        socket.write_all(answer.as_bytes()).await.unwrap();
+        for socket in &mut *observers {
+            socket.write_all(answer.as_bytes()).await.unwrap();
+        }
     }
 }
 
